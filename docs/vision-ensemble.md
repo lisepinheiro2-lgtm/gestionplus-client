@@ -16,6 +16,62 @@ read_when:
 
 L’objectif exprimé est de réunir à terme les deux projets dans un même ensemble Gestion+. Le choix de l’organisation finale des sources, des modules et des dépôts reste à définir. Cette page donne un repère commun sans fusionner les dépôts ni imposer un nouveau découpage de code.
 
+<a id="decisions-securite-2026-11-05"></a>
+## Décisions de référence — entreprises, autorisations et secours — 5 novembre 2026
+
+**Décisions fermes de conception, consignées le 5 novembre 2026 (Europe/Paris).** Cette section précise DEC01, DEC02, DEC05 et DEC06 et prime sur les anciennes formulations incompatibles : compte multi-structures encore ouvert, simple protection du « dernier administrateur », retrait individuel de l’ADMIN et poursuite de l’authentification avant les autorisations. Les historiques restent conservés. Aucune nouvelle implémentation ni validation technique n’est revendiquée.
+
+### Déploiement et entreprise cliente
+
+- Spring Boot et PostgreSQL peuvent être installés **localement chez l’entreprise**, avec les clients Swing sur son réseau, **ou sur un serveur distant**. Aucun hébergement externe n’est obligatoire. Un serveur local joignable reste un usage connecté ; le mode de secours répond à l’indisponibilité du serveur pour un poste.
+- Une **entreprise cliente peut regrouper plusieurs structures**. Elle possède **exactement un SUPER_ADMIN nominatif**, créé **exclusivement par la développeuse lors de la mise en service**. Aucun utilisateur ne peut en créer un autre.
+- Le SUPER_ADMIN a autorité sur les seules structures de **son entreprise cliente**, jamais sur une autre entreprise, même si elles partagent une infrastructure. L’emplacement du serveur ne modifie pas ces frontières.
+- Le **compte global multi-structures est retenu** : une identité peut avoir plusieurs rattachements, avec des rôles différents dans chaque structure. Structure indépendante et unité/équipe ne sont pas assimilées.
+
+### ADMIN protégé et fermeture de structure
+
+- Chaque structure possède **exactement un ADMIN nominatif**, limité à cette structure. Son compte **n’est jamais supprimable individuellement, même par le SUPER_ADMIN**. La règle ne se réduit plus à préserver un dernier ADMIN parmi plusieurs.
+- **Seul le SUPER_ADMIN de l’entreprise cliente concernée peut supprimer une structure**, dans le cadre de sa fermeture. Cette suppression emporte le rattachement/la fonction ADMIN et **tous les accès à cette structure**.
+- Distinguer le retrait des appartenances de la suppression de l’identité globale : **préserver les autres accès d’un compte multi-structures et les autres structures**. Le devenir d’un compte devenu sans rattachement reste à préciser ; aucun effacement global automatique n’est décidé.
+- Concevoir ensemble obligations de conservation, documents/archives, dépendances, audit, révocation des sessions/autorisations concernées et invalidation des accès de secours. Prévoir transactions, échecs, opérations simultanées et synchronisations pour éviter une suppression partielle ou la recréation d’un accès par un poste ancien. Aucune cascade d’effacement de toutes les données n’est présumée conforme.
+- Les anciennes possibilités de retrait ou de transfert de la fonction ADMIN ne constituent pas une exception permettant sa suppression individuelle. Les cas de remplacement, d’indisponibilité et de récupération restent à préciser sans laisser une structure active sans son ADMIN.
+
+### ADMIN_EMERGENCY : mode hors ligne de chaque ADMIN
+
+**ADMIN_EMERGENCY est un MODE de secours, pas un compte supplémentaire ni un rôle ordinaire de la hiérarchie.** Chaque ADMIN peut l’utiliser pour **sa propre structure**, sur un **poste préalablement autorisé**, en cas d’indisponibilité du serveur local ou distant.
+
+Exigences retenues : authentification hors ligne sécurisée, données locales nécessaires chiffrées et isolées, journalisation protégée, autorisations limitées, synchronisation et réconciliation contrôlées avec gestion des conflits. L’accès complet en ligne n’implique pas des opérations hors ligne illimitées.
+
+Une révocation ou une fermeture de structure survenue pendant une déconnexion ne peut pas être connue immédiatement du poste. Prévoir une autorisation locale limitée dans le temps, son renouvellement sécurisé et le traitement des changements devenus interdits à la reconnexion. Durées, opérations permises (notamment comptes, droits et finances), gestion des clés et règles de conflit restent à décider ; aucune révocation centrale instantanée hors ligne n’est promise.
+
+### Source d’autorité côté serveur
+
+L’acteur provient de **l’identité authentifiée par Spring Security**. Le serveur **recharge son compte**, vérifie son état courant et lit dans **StructureMembershipStore** ses rôles pour la structure concernée. Ce stockage fournit les appartenances ; les décisions d’autorisation relèvent du service côté serveur.
+
+Les rôles et UUID fournis librement par Swing ne prouvent ni l’identité de l’acteur ni un droit d’accès. Un identifiant de structure ou de cible reçu du client doit être contrôlé dans le périmètre autorisé. Les rôles globaux historiques et les informations devenues obsolètes en session ne doivent pas contourner ce contrôle. Pour SUPER_ADMIN, vérifier côté serveur son rattachement à **l’entreprise propriétaire de la structure**, au lieu de se contenter de la présence du rôle.
+
+### Hiérarchie et permissions métier
+
+La hiérarchie de rôles sera définie via **Spring Security** ; les permissions métier restent une politique distincte. Un rang ne suffit jamais sans identité fiable, périmètre, permission d’action et protection du compte cible.
+
+| Acteur ou relation | Décision retenue dans le périmètre autorisé |
+| --- | --- |
+| ADMIN / SUPER_ADMIN | Tous les droits métier dans leur périmètre respectif, sous réserve des opérations exclusivement réservées et des invariants ci-dessus : création du SUPER_ADMIN par la développeuse, suppression de structure par le SUPER_ADMIN, ADMIN non supprimable individuellement. Aucun accès aux secrets d’authentification ni contournement des traces. |
+| ACCOUNTANT | Hors de la chaîne hiérarchique ordinaire, mais sous ADMIN et SUPER_ADMIN. Aucun classement supplémentaire par rapport à RH, MANAGER ou SECRETARY n’est déduit ; accès documentaire limité aux besoins de sa mission. |
+| MANAGER / SECRETARY | Peuvent être **incomparables hiérarchiquement**. Aucun ordre total n’est imposé ; leurs permissions métier ne se déduisent pas d’une supériorité de l’un sur l’autre. |
+| RH | Peut modifier les rôles inférieurs autorisés ; ADMIN peut gérer le compte RH. Cela n’autorise pas RH à gérer ADMIN, SUPER_ADMIN, ACCOUNTANT ou ses pairs par déduction. « RH » est le terme métier ; des suivis existants emploient `R_H` pour le nom technique, sans renommage décidé ici. |
+| SECRETARY | Peut créer/éditer des contrats et inviter des utilisateurs ; ne peut **ni modifier les rôles ni désactiver les comptes**. Inviter n’autorise aucune attribution arbitraire de privilèges ; les rôles initiaux permis restent à préciser. |
+
+La gestion d’une cible exige les permissions prévues et l’autorité supérieure requise, en tenant compte de **tous** ses rôles et des rôles demandés. La hiérarchie ne remplace pas la protection spéciale de l’ADMIN ou les compétences réservées au SUPER_ADMIN. Le graphe exact, les cas incomparables et la matrice par action restent à détailler sans inventer de droit implicite.
+
+### Priorité, points ouverts et état réel
+
+**Sécuriser d’abord les autorisations côté serveur**, notamment l’identité fiable et le périmètre dans AuthorizationService, avant de poursuivre l’authentification et l’intégration Swing. Les anciens ordres de travail sont historiques lorsqu’ils contredisent cette priorité.
+
+Restent à préciser : représentation de l’entreprise et de l’unicité des comptes privilégiés ; procédure de mise en service et récupération/succession ; remplacement de l’ADMIN sans suppression individuelle ; graphe et matrice des droits ; conservation et fermeture transactionnelle ; portée de révocation des sessions multi-structures ; validité, clés, opérations et réconciliation hors ligne. Aucune durée légale ou technologie de stockage supplémentaire n’est choisie ici.
+
+**Fonctionnalités non livrées par cette intervention :** garanties d’unicité et de cycle de vie, contrôles complets par entreprise/structure, hiérarchie Spring raccordée aux opérations, suppression sécurisée de structure et mode de secours. Les socles ou tests antérieurs restent uniquement couverts par leurs preuves datées ; ils ne démontrent pas ces parcours complets. Aucun code, test, build, serveur, migration, commit, push ou publication réalisé pour cette mise à jour.
+
 ## Situation actuelle et cible
 
 | Composant | Situation documentée | Responsabilité dans la cible |
@@ -46,6 +102,8 @@ La [feuille de route du client](ROADMAP.md) conserve les demandes détaillées e
 
 <a id="decisions-metier-2026-10-29"></a>
 ## Décisions métier transversales — 29 octobre 2026
+
+**Lecture historique :** les choix d’identité multi-structures, d’administration, de droits et de secours sont précisés par les [décisions du 5 novembre](#decisions-securite-2026-11-05), qui priment en cas d’incompatibilité.
 
 **Cible de conception précisée par l'utilisatrice, puis ajustée après discussion des risques de concurrence et de fonctionnement hors ligne. Aucune de ces décisions n'est une preuve d'implémentation.** Les six repères DEC01–DEC06 ci-dessous constituent la référence commune ; les suivis client et serveur y renvoient. Les règles de comptes et de sécurité déjà retenues restent applicables, avec leur adaptation multi-structures encore à préciser.
 

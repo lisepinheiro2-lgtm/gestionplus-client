@@ -8,6 +8,28 @@ read_when:
 
 # Feuille de route du projet gestion
 
+<a id="priorite-autorisations-2026-11-05"></a>
+## Priorité et décisions actualisées — 5 novembre 2026
+
+**Documentation de conception uniquement.** Les [décisions communes du 5 novembre](vision-ensemble.md#decisions-securite-2026-11-05) priment sur les anciennes hypothèses de comptes et les ordres de travail incompatibles ci-dessous. Sécuriser **les autorisations côté serveur en premier**, puis reprendre l’authentification et l’intégration Swing.
+
+| Repères concernés | Décisions fermes à conserver |
+| --- | --- |
+| SOC07, CPT01–CPT04 | Serveur Spring Boot/PostgreSQL local chez l’entreprise ou distant ; aucune obligation d’hébergement externe. Une entreprise cliente peut regrouper plusieurs structures ; exactement un SUPER_ADMIN créé par la développeuse à la mise en service, limité à cette entreprise. |
+| CPT01–CPT03, ADM01–ADM07 | Compte global multi-structures, rôles propres à chaque rattachement ; exactement un ADMIN nominatif par structure, jamais supprimable individuellement même par SUPER_ADMIN. Seul le SUPER_ADMIN de l’entreprise peut supprimer une structure ; retirer tous ses accès et son rattachement ADMIN en préservant les autres accès du compte global. Conservation, transactions, révocation et synchronisations à concevoir. |
+| SOC07, CPT01–CPT03 | Identité authentifiée Spring, compte rechargé au serveur et rôles lus dans StructureMembershipStore pour la structure ; rôles/UUID libres fournis par Swing sans valeur d’autorité. SUPER_ADMIN contrôlé dans son entreprise. |
+| CPT03, CLI, ADM | Hiérarchie via Spring Security, distincte des permissions métier. ACCOUNTANT hors chaîne ordinaire mais sous ADMIN/SUPER_ADMIN ; MANAGER et SECRETARY peuvent être incomparables. ADMIN/SUPER_ADMIN ont tous les droits métier de leur périmètre sous les réserves de cycle de vie ; RH modifie les rôles inférieurs autorisés, ADMIN gère RH. SECRETARY crée/édite des contrats et invite, sans modifier les rôles ni désactiver de comptes. |
+| SOC07, ADM07 | ADMIN_EMERGENCY est un mode hors ligne pour chaque ADMIN dans sa propre structure sur poste préautorisé, pas un compte ni un rôle ordinaire. Authentification sécurisée, chiffrement local, audit, droits limités, réconciliation et révocation différée à concevoir. |
+
+Swing présentera les périmètres, opérations permises et refus ; la décision de sécurité appartient au serveur. Le détail des droits, les parcours de fermeture/récupération et les opérations hors ligne restent à préciser. Ces fonctions ne sont pas annoncées comme implémentées ou vérifiées par cette note ; la démonstration autonome fictive reste distincte. Aucun code ni exécution applicative, test, build, migration ou action Git modifiante.
+
+<a id="tests-serveur-2026-11-05"></a>
+## Point de reprise — tests serveur du 5 novembre 2026
+
+Pour SOC07, CPT01–CPT03 et ADM07, **huit fichiers de tests serveur ont été adaptés et deux ajoutés, avec 87 méthodes déclarées non compilées et non exécutées**. Les scénarios préparent les vérifications d’identité Spring, de protections ADMIN/SUPER_ADMIN, de hiérarchie et droits par structure, d’entreprise propriétaire, d’audit et de conservation des autres accès. Les fixtures incluent désormais les tenants ; voir le [bilan serveur et ses limites](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/AVANCEMENT.md#tests-autorisations-2026-11-05).
+
+Cette écriture ne valide pas l’intégration Swing, la révocation effective des sessions, le rattachement personnel au manager, l’unicité des administrateurs en stockage, la fermeture de structure ou le mode hors ligne. Les problèmes de production repérés sont signalés dans le bilan et restent sans correction. Aucun code client modifié ; aucune compilation ni exécution applicative, test, serveur ou migration lancée. La priorité des autorisations serveur est maintenue.
+
 ## Décisions transversales du 29 octobre 2026
 
 **Précisions de conception, sans livraison de code.** Cette section complète les demandes ci-dessous ; les états techniques historiques ne sont pas réévalués. La référence détaillée commune est la [vision d'ensemble — décisions du 29 octobre](vision-ensemble.md#decisions-metier-2026-10-29).
@@ -42,6 +64,8 @@ Mise en cohérence documentaire du **20 octobre 2026**. Cette liste conserve les
 « À réaliser » signifie qu'aucune implémentation complète n'est établie dans l'état lu. « Partiel » signale un socle ou une partie existante. La réussite des parcours reste distincte de leur présence dans le code ; voir [VALIDATION.md](VALIDATION.md).
 
 ## Ordre de travail
+
+**Ordre historique, à lire sous la [priorité autorisations du 5 novembre](#priorite-autorisations-2026-11-05).** L’ancienne mention de commit ci-dessous ne constitue aucune autorisation Git.
 
 Inventaire → factorisation → fonctionnalités → design → tests regroupés → commit après bilan. La reprise porte d'abord sur la sécurisation des affectations et des erreurs, puis les trajets et Personnel. Les autres domaines restent au carnet de demandes sans priorité relative inventée.
 
