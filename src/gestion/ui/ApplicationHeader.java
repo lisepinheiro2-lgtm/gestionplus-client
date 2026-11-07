@@ -15,14 +15,20 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 
 import gestion.ui.raven.RavenDarkLightSwitch;
 
 public final class ApplicationHeader extends JPanel implements AppThemeAware {
 
+	private final JLabel logo = new JLabel();
+	private final Icon lightLogo;
+	private final Icon darkLogo;
 	private final JLabel brand = new JLabel("Gestion +");
 	private final JLabel description = new JLabel("Organisation & remplacements");
 	private final JLabel page = new JLabel("Accueil", JLabel.CENTER);
@@ -53,14 +59,26 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 	};
 	private final Map<String, JButton> destinations = new LinkedHashMap<>();
 
+	public ApplicationHeader(Component parent, JButton home) {
+		this(parent, home,
+				new FlatSVGIcon(ApplicationHeader.class.getResource("/icons/gestion-header-light.svg")).derive(64, 64),
+				new FlatSVGIcon(ApplicationHeader.class.getResource("/icons/gestion-header-dark.svg")).derive(64, 64));
+	}
+
 	public ApplicationHeader(Component parent, JButton home, Image image) {
+		this(parent, home, new ImageIcon(image.getScaledInstance(64, 64, Image.SCALE_SMOOTH)), null);
+	}
+
+	private ApplicationHeader(Component parent, JButton home, Icon lightLogo, Icon darkLogo) {
 		super(new BorderLayout(16, 8));
 		this.home = home;
+		this.lightLogo = lightLogo;
+		this.darkLogo = darkLogo != null ? darkLogo : lightLogo;
 
 		setBorder(BorderFactory.createEmptyBorder(2, 32, 2, 24));
 		JPanel identity = new JPanel(new BorderLayout(12, 0));
 		identity.setOpaque(false);
-		JLabel logo = new JLabel(new ImageIcon(image.getScaledInstance(64, 64, Image.SCALE_SMOOTH)));
+		logo.setIcon(UIUtils.isDarkMode() ? this.darkLogo : this.lightLogo);
 		JPanel words = new JPanel();
 		words.setOpaque(false);
 		words.setLayout(new BoxLayout(words, BoxLayout.Y_AXIS));
@@ -168,6 +186,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		Color border = dark ? new Color(45, 57, 74) : new Color(224, 231, 240);
 
 		setBackground(background);
+		logo.setIcon(dark ? darkLogo : lightLogo);
 		brand.setForeground(foreground);
 		description.setForeground(muted);
 		page.setForeground(muted);

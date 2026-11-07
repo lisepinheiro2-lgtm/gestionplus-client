@@ -75,7 +75,6 @@ public class MainUI {
 		frame.getRootPane().putClientProperty(com.formdev.flatlaf.FlatClientProperties.TITLE_BAR_SHOW_ICON, false);
 		frame.getRootPane().putClientProperty(com.formdev.flatlaf.FlatClientProperties.TITLE_BAR_SHOW_TITLE, false);
 
-		ImageIcon appIcon = new ImageIcon(MainUI.class.getResource("/icons/gestion-64.png"));
 		ImageIcon taskbarIcon = new ImageIcon(MainUI.class.getResource("/icons/gestion-taskbar.png"));
 		frame.setIconImages(java.util.stream.IntStream.of(16, 24, 32, 48, 64, 128, 256)
 				.mapToObj(size -> taskbarIcon.getImage().getScaledInstance(size, size, java.awt.Image.SCALE_SMOOTH))
@@ -98,7 +97,7 @@ public class MainUI {
 
 		homeButton.setVisible(true);
 
-		navigationHeader = new ApplicationHeader(frame, homeButton, appIcon.getImage());
+		navigationHeader = new ApplicationHeader(frame, homeButton);
 		navigationHeader.configureNavigation(this::personnelUI, this::clientUI, this::planningUI, this::replacementUI);
 		homeButton.setVisible(true);
 		frame.add(navigationHeader, BorderLayout.NORTH);
