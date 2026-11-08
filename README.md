@@ -8,6 +8,9 @@ Ce dépôt contient le **client de bureau Java Swing**, utilisable de façon aut
 
 > **En développement actif.** État du client relu dans les sources le **29 octobre 2026**. Les fonctionnalités décrites sont présentes dans le code ; cette revue documentaire ne constitue pas une validation complète de l'application.
 
+🚀 **[Télécharger et essayer la démo Windows](https://github.com/lisepinheiro2-lgtm/gestionplus-client/releases/tag/v0.1.0-demo)**
+
+*Démonstration du client Swing avec données fictives et stockage CSV local, sans connexion au serveur.*
 [Documentation](docs/index.md) · [Vision client–serveur](docs/vision-ensemble.md) · [Feuille de route](docs/ROADMAP.md) · [Serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server)
 
 ## Le projet aujourd'hui
