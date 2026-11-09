@@ -100,6 +100,8 @@ Pour les trajets, définir les entrées, la règle précise des cinq minutes, le
 
 ## Comptes et préférences utilisateur
 
+Les [décisions du 9 novembre sur les comptes et rattachements](vision-ensemble.md#inscription-et-rattachements-2026-11-09) actualisent le parcours CPT03 et la portée des droits de `MANAGER` et `SECRETARY` à la création d’un rattachement. Swing distingue un salarié connu dans une autre structure du même tenant, un salarié déjà rattaché à la structure cible et une première inscription. Il présente les seuls résultats et données autorisés par le serveur. La première invitation est envoyée après validation et enregistrement des accès, puis expire après sept jours. Ces parcours restent à développer.
+
 | Repère | Type | Demande et état |
 | --- | --- | --- |
 | CPT01 | Fonction | Nouvelle vue de connexion avant MainUI ; conserver HomePanel pour l'utilisateur connecté. À réaliser. |

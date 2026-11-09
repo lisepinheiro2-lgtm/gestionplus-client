@@ -16,6 +16,19 @@ read_when:
 
 L’objectif exprimé est de réunir à terme les deux projets dans un même ensemble Gestion+. Le choix de l’organisation finale des sources, des modules et des dépôts reste à définir. Cette page donne un repère commun sans fusionner les dépôts ni imposer un nouveau découpage de code.
 
+<a id="inscription-et-rattachements-2026-11-09"></a>
+## Compte global, rattachements et première inscription — 9 novembre 2026
+
+**Décisions de conception validées.** Elles précisent DEC01 et DEC02 et remplacent, pour l’attribution de rôles lors d’un nouveau rattachement, l’ancienne restriction concernant `SECRETARY`.
+
+- **Identité et isolation.** Un salarié possède un seul `UserAccount`, identifié par son `userID`. Il peut avoir plusieurs rattachements et des rôles différents dans les structures de la même entreprise cliente (`Tenant`). Des fiches salarié distinctes peuvent être reliées à cette identité. Les entreprises sont strictement isolées et les documents et données sensibles restent dans leur structure. Le `SUPER_ADMIN` est rattaché à son entreprise. L’absence de `StructureMembership` ne suffit pas à désactiver son compte.
+- **Parcours Swing.** Pour un salarié déjà connu dans une autre structure de la même entreprise, l’interface signale son existence, propose de reprendre uniquement les informations autorisées et permet de choisir les nouveaux rôles. Le serveur réutilise le compte global. Si le rattachement cible existe déjà, Swing propose de gérer ses rôles sans le dupliquer. Un salarié inconnu suit la première inscription. Le serveur autorise la recherche et la reprise des données sans révéler l’existence de comptes d’autres entreprises.
+- **Attribution initiale des rôles.** Le serveur exige à la fois `MANAGE_USERS`, `MANAGE_USER_ROLES`, une autorité strictement supérieure à chacun des rôles attribués et le respect du périmètre de la structure et de l’entreprise. Dans ces limites, `SUPER_ADMIN`, `ADMIN`, `R_H`, `MANAGER` et `SECRETARY` disposent des deux permissions. `TEAM_LEAD`, `EMPLOYEE` et `ACCOUNTANT` en sont dépourvus. L’attribution de la fonction `ADMIN` relève de son transfert dédié.
+- **Première inscription.** Créer le compte en attente, préparer les rattachements et les rôles, vérifier les droits et enregistrer tous les accès de façon cohérente. Envoyer l’invitation après leur validation et leur enregistrement effectifs. Les accès sont inutilisables jusqu’à l’activation après vérifications.
+- **Expiration.** Le délai de sept jours court à compter de l’envoi effectif de l’invitation. Si le compte est toujours en attente à l’échéance, le serveur invalide le jeton, passe le compte à `DISABLED` et retire atomiquement tous les rattachements et rôles préparés pour cette inscription. Il conserve l’identité et les données à retenir, trace les transitions et protège une activation concurrente réussie. Une réintégration exige une nouvelle validation, sans restauration automatique des accès.
+
+Le parcours complet reste à développer. La coordination et les invitations concurrentes, le lien exact entre les fiches salarié et le compte, le sort du rattachement à l’entreprise à l’expiration, le déclenchement du traitement et les parcours de réintégration ou d’invitation d’un compte déjà actif restent à préciser.
+
 <a id="decisions-securite-2026-11-05"></a>
 ## Décisions de référence — entreprises, autorisations et secours — 5 novembre 2026
 
