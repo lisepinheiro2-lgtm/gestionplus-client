@@ -13,8 +13,11 @@ public final class TransactionCrashFixture {
 		}
 
 		CsvStore.installHook = count -> {
-			if (count == 1)
+
+			if (count == 1) {
 				Runtime.getRuntime().halt(23);
+			}
+
 		};
 
 		var clients = new ClientCsvRepository(directory).load();

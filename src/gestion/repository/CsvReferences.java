@@ -3,7 +3,8 @@ package gestion.repository;
 import java.util.List;
 import java.util.UUID;
 
-import gestion.model.*;
+import gestion.model.Client;
+import gestion.model.Employee;
 import gestion.util.DomainValidation;
 
 public final class CsvReferences {
@@ -12,21 +13,26 @@ public final class CsvReferences {
 	}
 
 	static Employee employeeById(List<Employee> employees, String value, boolean optional) {
-		if (optional && value.isEmpty())
+
+		if (optional && value.isEmpty()) {
 			return null;
+		}
 
 		UUID id = DomainValidation.uuid(value);
 		List<Employee> matches = employees.stream().filter(e -> e.getEmployeeID().equals(id)).toList();
 
-		if (matches.size() != 1)
+		if (matches.size() != 1) {
 			throw new IllegalArgumentException("UUID salarié introuvable ou dupliqué : " + id);
+		}
 
 		return matches.getFirst();
 	}
 
 	static Employee optionalEmployeeById(List<Employee> employees, String value, String first, String last) {
-		if (value.isEmpty() && (!first.isEmpty() || !last.isEmpty()))
+
+		if (value.isEmpty() && (!first.isEmpty() || !last.isEmpty())) {
 			throw new IllegalArgumentException("Référence salarié sans UUID ; attribution non devinée.");
+		}
 
 		return employeeById(employees, value, true);
 	}
@@ -35,8 +41,9 @@ public final class CsvReferences {
 		UUID id = DomainValidation.uuid(value);
 		List<Client> matches = clients.stream().filter(c -> c.getClientID().equals(id)).toList();
 
-		if (matches.size() != 1)
+		if (matches.size() != 1) {
 			throw new IllegalArgumentException("UUID client introuvable ou dupliqué : " + id);
+		}
 
 		return matches.getFirst();
 	}
@@ -45,11 +52,16 @@ public final class CsvReferences {
 		Employee match = null;
 
 		for (Employee employee : employees) {
+
 			if (employee.getFirstName().equals(firstName) && employee.getLastName().equals(lastName)) {
-				if (match != null)
+
+				if (match != null) {
 					throw new IllegalArgumentException("Référence employé ambiguë.");
+				}
+
 				match = employee;
 			}
+
 		}
 
 		return match;
@@ -59,11 +71,16 @@ public final class CsvReferences {
 		Client match = null;
 
 		for (Client client : clients) {
+
 			if (client.getFirstName().equals(firstName) && client.getLastName().equals(lastName)) {
-				if (match != null)
+
+				if (match != null) {
 					throw new IllegalArgumentException("Référence client ambiguë.");
+				}
+
 				match = client;
 			}
+
 		}
 
 		return match;

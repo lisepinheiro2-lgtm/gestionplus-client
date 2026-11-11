@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-
 public final class CsvStore {
 
 	private static final String JOURNAL = ".gestion-transaction";
@@ -50,15 +49,21 @@ public final class CsvStore {
 	public static synchronized void recover(Path directory) throws IOException {
 
 		Path root = directory(directory);
-		if (BLOCKED.contains(root))
+
+		if (BLOCKED.contains(root)) {
 			throw new IOException("Récupération incomplète : fermer l'application et vérifier le journal local.");
+		}
+
 		Path journal = root.resolve(JOURNAL);
 
-		if (Files.notExists(journal))
+		if (Files.notExists(journal)) {
 			return;
+		}
 
-		if (!Files.isDirectory(journal, LinkOption.NOFOLLOW_LINKS))
+		if (!Files.isDirectory(journal, LinkOption.NOFOLLOW_LINKS)) {
 			throw new IOException("Journal de récupération invalide.");
+		}
+
 		Path prepared = journal.resolve("prepared");
 
 		if (Files.exists(prepared) && !Files.exists(journal.resolve("committed"))) {
@@ -70,22 +75,27 @@ public final class CsvStore {
 
 				if (entry.length != 4 || !FILES.contains(entry[0]) || !seen.add(entry[0])
 						|| !(entry[1].equals("true") || entry[1].equals("false")) || !entry[2].matches("[0-9a-f]{64}")
-						|| !entry[3].matches("[0-9a-f]{64}"))
+						|| !entry[3].matches("[0-9a-f]{64}")) {
 					throw new IOException("Manifeste de récupération invalide.");
+				}
+
 				Path target = root.resolve(entry[0]);
 
 				boolean existed = Boolean.parseBoolean(entry[1]);
 
-				if (existed && !hash(Files.readAllBytes(journal.resolve(entry[0] + ".old"))).equals(entry[2]))
+				if (existed && !hash(Files.readAllBytes(journal.resolve(entry[0] + ".old"))).equals(entry[2])) {
 					throw new IOException("Copie de récupération invalide : " + entry[0]);
+				}
 
 				if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
 					requireRegular(target);
 					String current = hash(Files.readAllBytes(target));
 
-					if (!current.equals(entry[2]) && !current.equals(entry[3]))
+					if (!current.equals(entry[2]) && !current.equals(entry[3])) {
 						throw new IOException("Fichier modifié hors de l'opération : " + entry[0]
 								+ ". Récupération manuelle nécessaire.");
+					}
+
 				} else if (!Files.notExists(target)) {
 					throw new IOException("Fichier inaccessible : " + entry[0]);
 				}
@@ -93,17 +103,21 @@ public final class CsvStore {
 				entries.add(entry);
 			}
 
-			if (entries.isEmpty())
+			if (entries.isEmpty()) {
 				throw new IOException("Manifeste de récupération vide.");
+			}
 
 			for (String[] entry : entries) {
 				Path target = root.resolve(entry[0]);
 
-				if (Boolean.parseBoolean(entry[1]))
+				if (Boolean.parseBoolean(entry[1])) {
 					atomicWrite(target, Files.readAllBytes(journal.resolve(entry[0] + ".old")));
-				else
+				} else {
 					Files.deleteIfExists(target);
+				}
+
 			}
+
 		}
 
 		cleanup(journal);
@@ -117,33 +131,43 @@ public final class CsvStore {
 		} catch (IOException e) {
 			throw new UncheckedIOException("Échec de sauvegarde : " + path.getFileName(), e);
 		}
+
 	}
 
 	public static synchronized void writeChecked(Path path, String content) throws IOException {
 
 		Path target = directory(path);
 
-		if (!FILES.contains(target.getFileName().toString()))
+		if (!FILES.contains(target.getFileName().toString())) {
 			throw new IOException("Fichier CSV non pris en charge.");
+		}
+
 		Path root = target.getParent();
 
-		if (BLOCKED.contains(root))
+		if (BLOCKED.contains(root)) {
 			throw new IOException("Récupération incomplète ; redémarrage requis.");
+		}
+
 		Transaction transaction = CURRENT.get();
 		byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
 
 		if (transaction != null) {
 
-			if (!transaction.directory.equals(root))
+			if (!transaction.directory.equals(root)) {
 				throw new IOException("Les CSV doivent partager le même dossier.");
+			}
+
 			transaction.writes.put(target, bytes);
 		} else {
+
 			try {
 				transaction(root, () -> CURRENT.get().writes.put(target, bytes));
 			} catch (UncheckedIOException failure) {
 				throw failure.getCause();
 			}
+
 		}
+
 	}
 
 	public static synchronized void onRollback(Path directory, Runnable restore) {
@@ -152,10 +176,13 @@ public final class CsvStore {
 
 		if (transaction != null) {
 
-			if (!transaction.directory.equals(directory(directory)))
+			if (!transaction.directory.equals(directory(directory))) {
 				throw new IllegalArgumentException("Les services doivent utiliser le même dossier de données.");
+			}
+
 			transaction.rollbacks.add(restore);
 		}
+
 	}
 
 	public static synchronized void transaction(Path directory, Runnable action) {
@@ -164,8 +191,10 @@ public final class CsvStore {
 
 		if (CURRENT.get() != null) {
 
-			if (!CURRENT.get().directory.equals(root))
+			if (!CURRENT.get().directory.equals(root)) {
 				throw new IllegalArgumentException("Dossiers différents.");
+			}
+
 			action.run();
 			return;
 		}
@@ -179,6 +208,7 @@ public final class CsvStore {
 			commit(transaction);
 
 		} catch (IOException | RuntimeException failure) {
+
 			for (int i = transaction.rollbacks.size() - 1; i >= 0; i--) {
 
 				try {
@@ -186,23 +216,28 @@ public final class CsvStore {
 				} catch (RuntimeException rollback) {
 					failure.addSuppressed(rollback);
 				}
+
 			}
 
-			if (failure instanceof IOException io)
+			if (failure instanceof IOException io) {
 				throw new UncheckedIOException(
 						"Opération non enregistrée. Vérifier le journal si la récupération échoue.", io);
+			}
+
 			throw (RuntimeException) failure;
 
 		} finally {
 			CURRENT.remove();
 		}
+
 	}
 
 	static synchronized void expectUnchanged(Path directory, Map<Path, byte[]> expected) {
 		Transaction transaction = CURRENT.get();
 
-		if (transaction == null || !transaction.directory.equals(directory(directory)))
+		if (transaction == null || !transaction.directory.equals(directory(directory))) {
 			throw new IllegalStateException("Vérification CSV hors transaction.");
+		}
 
 		expected.forEach((path, bytes) -> transaction.expected.put(path, bytes == null ? null : bytes.clone()));
 	}
@@ -213,14 +248,17 @@ public final class CsvStore {
 
 	private static void commit(Transaction transaction) throws IOException {
 
-		if (transaction.writes.isEmpty())
+		if (transaction.writes.isEmpty()) {
 			return;
+		}
 
 		for (var entry : transaction.expected.entrySet()) {
 			byte[] current = Files.notExists(entry.getKey()) ? null : Files.readAllBytes(entry.getKey());
 
-			if (!java.util.Arrays.equals(current, entry.getValue()))
+			if (!java.util.Arrays.equals(current, entry.getValue())) {
 				throw new IOException("CSV modifié avant migration : " + entry.getKey().getFileName());
+			}
+
 		}
 
 		CsvIdentityMigration.validatePending(transaction.directory, transaction.writes);
@@ -235,19 +273,25 @@ public final class CsvStore {
 				Path target = entry.getKey();
 				boolean exists = Files.exists(target, LinkOption.NOFOLLOW_LINKS);
 
-				if (exists)
+				if (exists) {
 					requireRegular(target);
-				else if (!Files.notExists(target))
+				} else if (!Files.notExists(target)) {
 					throw new IOException("Fichier inaccessible : " + target.getFileName());
+				}
+
 				byte[] previous = exists ? Files.readAllBytes(target) : new byte[0];
 
 				if (transaction.expected.containsKey(target)
-						&& !java.util.Arrays.equals(exists ? previous : null, transaction.expected.get(target)))
+						&& !java.util.Arrays.equals(exists ? previous : null, transaction.expected.get(target))) {
 					throw new IOException("CSV modifié pendant la migration : " + target.getFileName());
+				}
+
 				String name = target.getFileName().toString();
 
-				if (exists)
+				if (exists) {
 					atomicWrite(journal.resolve(name + ".old"), previous);
+				}
+
 				atomicWrite(journal.resolve(name + ".new"), entry.getValue());
 				writeHook.written(target);
 				manifest.append(name).append(';').append(exists).append(';').append(hash(previous)).append(';')
@@ -266,6 +310,7 @@ public final class CsvStore {
 			atomicWrite(journal.resolve("committed"), new byte[0]);
 
 		} catch (IOException | RuntimeException failure) {
+
 			try {
 				recover(transaction.directory);
 
@@ -283,6 +328,7 @@ public final class CsvStore {
 			cleanup(journal);
 		} catch (IOException ignored) {
 		}
+
 	}
 
 	@FunctionalInterface
@@ -306,31 +352,43 @@ public final class CsvStore {
 	}
 
 	private static void requireRegular(Path path) throws IOException {
-		if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS))
+
+		if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)) {
 			throw new IOException("Fichier ordinaire attendu : " + path.getFileName());
+		}
+
 	}
 
 	private static void atomicWrite(Path path, byte[] bytes) throws IOException {
 
-		if (Files.exists(path, LinkOption.NOFOLLOW_LINKS))
+		if (Files.exists(path, LinkOption.NOFOLLOW_LINKS)) {
 			requireRegular(path);
+		}
+
 		Path temp = Files.createTempFile(path.getParent(), ".gestion-", ".tmp");
 
 		try {
+
 			try (FileChannel channel = FileChannel.open(temp, StandardOpenOption.WRITE)) {
 				ByteBuffer buffer = ByteBuffer.wrap(bytes);
-				while (buffer.hasRemaining())
+
+				while (buffer.hasRemaining()) {
 					channel.write(buffer);
+				}
+
 				channel.force(true);
 			}
 
-			if (FILES.contains(path.getFileName().toString()))
+			if (FILES.contains(path.getFileName().toString())) {
 				writeHook.written(path);
+			}
+
 			Files.move(temp, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
 
 		} finally {
 			Files.deleteIfExists(temp);
 		}
+
 	}
 
 	private static String hash(byte[] bytes) {
@@ -340,6 +398,7 @@ public final class CsvStore {
 		} catch (NoSuchAlgorithmException impossible) {
 			throw new IllegalStateException(impossible);
 		}
+
 	}
 
 	private static void cleanup(Path journal) throws IOException {
@@ -350,18 +409,28 @@ public final class CsvStore {
 				String name = path.getFileName().toString();
 
 				if (!(name.equals("prepared") || name.equals("committed") || name.startsWith(".gestion-")
-						|| FILES.stream().anyMatch(file -> name.equals(file + ".old") || name.equals(file + ".new"))))
+						|| FILES.stream().anyMatch(file -> name.equals(file + ".old") || name.equals(file + ".new")))) {
 					throw new IOException("Fichier inconnu dans le journal ; vérification manuelle requise.");
+				}
+
 			}
+
 		}
 
-		if (Files.exists(journal.resolve("prepared")) && !Files.exists(journal.resolve("committed")))
+		if (Files.exists(journal.resolve("prepared")) && !Files.exists(journal.resolve("committed"))) {
 			atomicWrite(journal.resolve("committed"), new byte[0]);
+		}
 
 		try (var files = Files.list(journal)) {
-			for (Path path : files.toList())
-				if (!path.getFileName().toString().equals("committed"))
+
+			for (Path path : files.toList()) {
+
+				if (!path.getFileName().toString().equals("committed")) {
 					Files.delete(path);
+				}
+
+			}
+
 		}
 
 		Files.deleteIfExists(journal.resolve("committed"));

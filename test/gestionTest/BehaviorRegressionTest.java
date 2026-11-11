@@ -98,8 +98,11 @@ class BehaviorRegressionTest {
 
 	Client client() {
 		Client existing = clients.findClient("Élise", "Client");
-		if (existing != null)
+
+		if (existing != null) {
 			return existing;
+		}
+
 		clients.addClient("Élise", "Client", "Adresse de test", 20, LocalDate.of(2026, 1, 1), null);
 
 		return clients.getClients().getFirst();
@@ -472,11 +475,14 @@ class BehaviorRegressionTest {
 
 		for (Component child : root.getComponents()) {
 
-			if (type.isInstance(child))
+			if (type.isInstance(child)) {
 				result.add(type.cast(child));
+			}
 
-			if (child instanceof Container container)
+			if (child instanceof Container container) {
 				result.addAll(find(container, type));
+			}
+
 		}
 
 		return result;

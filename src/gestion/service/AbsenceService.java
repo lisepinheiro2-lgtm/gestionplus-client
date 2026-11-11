@@ -55,6 +55,7 @@ public class AbsenceService {
 			if (!expected.equals(DomainValidation.replacement(request))) {
 				throw new IOException("Période de remplacement incohérente.");
 			}
+
 		}
 
 		for (gestion.model.Intervention intervention : planning.getInterventions()) {
@@ -81,6 +82,7 @@ public class AbsenceService {
 			if (range.start().isBefore(sourcePeriod.start()) || range.end().isAfter(sourcePeriod.end())) {
 				throw new IOException("Intervention hors de sa période d'absence.");
 			}
+
 		}
 
 		for (gestion.model.Replacement request : replacementList.getReplacements()) {
@@ -89,7 +91,9 @@ public class AbsenceService {
 					&& absences.stream().noneMatch(a -> request.getAbsenceId().equals(a.getId()))) {
 				throw new IOException("Demande liée à une absence inexistante.");
 			}
+
 		}
+
 	}
 
 	private void change(Runnable mutation) throws IOException {
@@ -114,6 +118,7 @@ public class AbsenceService {
 				previous.get(i).setEndDate(ends.get(i));
 				previous.get(i).setEndTime(endTimes.get(i));
 			}
+
 		};
 
 		try {
@@ -138,6 +143,7 @@ public class AbsenceService {
 		} catch (UncheckedIOException e) {
 			throw e.getCause();
 		}
+
 	}
 
 	public AbsenceService(PersonnelService personnel, ReplacementService replacementList, PlanningService planning)
@@ -151,10 +157,13 @@ public class AbsenceService {
 		this.personnel = personnel;
 		this.planning = planning;
 
-		if (!getDirectory().equals(planning.getDirectory()))
+		if (!getDirectory().equals(planning.getDirectory())) {
 			throw new IllegalArgumentException("Dossiers de données différents.");
-		if (!getDirectory().equals(replacementList.getDirectory()))
+		}
+
+		if (!getDirectory().equals(replacementList.getDirectory())) {
 			throw new IllegalArgumentException("Dossiers de données différents.");
+		}
 
 		this.replacementList = replacementList;
 
@@ -170,25 +179,32 @@ public class AbsenceService {
 	public EmployeeStatus getStatusAt(Employee employee, LocalDate date) {
 
 		for (EmployeeAbsence absence : absences) {
+
 			if (absence.getEmployee() == employee && !date.isBefore(absence.getStartDate())
 					&& !date.isAfter(absence.getEndDate())) {
 
 				return absence.getStatus();
 			}
+
 		}
 
 		return EmployeeStatus.OPERATIONAL;
 	}
 
 	public EmployeeStatus getStatusAt(Employee employee, LocalDateTime dateTime) {
+
 		for (EmployeeAbsence absence : absences) {
-			if (absence.getEmployee() != employee)
+
+			if (absence.getEmployee() != employee) {
 				continue;
+			}
 
 			var period = DomainValidation.absencePeriod(absence);
 
-			if (!dateTime.isBefore(period.start()) && dateTime.isBefore(period.end()))
+			if (!dateTime.isBefore(period.start()) && dateTime.isBefore(period.end())) {
 				return absence.getStatus();
+			}
+
 		}
 
 		return EmployeeStatus.OPERATIONAL;
@@ -198,8 +214,9 @@ public class AbsenceService {
 
 		personnel.requireKnown(employee);
 
-		if (date == null)
+		if (date == null) {
 			throw new IllegalArgumentException("Date de reprise manquante.");
+		}
 
 		for (EmployeeAbsence absence : absences) {
 
@@ -208,45 +225,59 @@ public class AbsenceService {
 				ensureResumeAllowed(absence);
 
 				change(() -> {
-					if (date.equals(absence.getStartDate()))
+
+					if (date.equals(absence.getStartDate())) {
 						absences.remove(absence);
-					else
+					} else {
 						absence.setEndDate(date.minusDays(1));
+					}
+
 				});
 				return;
 			}
+
 		}
+
 	}
 
 	public void resumeEmployeeAt(Employee employee, LocalDateTime dateTime) throws IOException {
 		personnel.requireKnown(employee);
 
-		if (dateTime == null)
+		if (dateTime == null) {
 			throw new IllegalArgumentException("Date et heure de reprise manquantes.");
+		}
 
 		for (EmployeeAbsence absence : absences) {
 			var period = DomainValidation.absencePeriod(absence);
 
-			if (absence.getEmployee() != employee || dateTime.isBefore(period.start()) || !dateTime.isBefore(period.end()))
+			if (absence.getEmployee() != employee || dateTime.isBefore(period.start())
+					|| !dateTime.isBefore(period.end())) {
 				continue;
+			}
 
 			ensureResumeAllowed(absence);
 			change(() -> {
+
 				if (dateTime.equals(period.start())) {
 					absences.remove(absence);
 				} else {
 					absence.setEndDate(dateTime.toLocalDate());
 					absence.setEndTime(dateTime.toLocalTime());
 				}
+
 			});
 			return;
 		}
+
 	}
 
 	private void ensureResumeAllowed(EmployeeAbsence absence) {
-		if (!planning.getInterventionsByAbsenceId(absence.getId()).isEmpty())
+
+		if (!planning.getInterventionsByAbsenceId(absence.getId()).isEmpty()) {
 			throw new IllegalArgumentException(
 					"Reprise temporairement bloquée : des interventions sont liées à cette absence. Le rétablissement des affectations doit être décidé sans annuler les remplacements existants.");
+		}
+
 	}
 
 	public void addAbsence(EmployeeAbsence absence) throws IOException {
@@ -259,11 +290,13 @@ public class AbsenceService {
 		return planning.previewAbsenceReleases(absence, true);
 	}
 
-	public void addTimedAbsence(EmployeeAbsence absence, List<PlanningService.AbsenceRelease> approved) throws IOException {
+	public void addTimedAbsence(EmployeeAbsence absence, List<PlanningService.AbsenceRelease> approved)
+			throws IOException {
 		List<PlanningService.AbsenceRelease> current = previewTimedAbsence(absence);
 
-		if (approved == null || !current.equals(approved))
+		if (approved == null || !current.equals(approved)) {
 			throw new IllegalArgumentException("Le planning a changé : vérifiez à nouveau les créneaux à libérer.");
+		}
 
 		List<PlanningService.AbsenceRelease> confirmed = List.copyOf(approved);
 		change(() -> absences.add(absence), () -> planning.releaseForConfirmedAbsence(absence, confirmed));
@@ -284,7 +317,9 @@ public class AbsenceService {
 					DomainValidation.absencePeriod(existing), DomainValidation.absencePeriod(absence))) {
 				throw new IllegalArgumentException("Une absence existe déjà pour cet employé sur cette période.");
 			}
+
 		}
+
 	}
 
 	public ArrayList<EmployeeAbsence> getAbsences() {

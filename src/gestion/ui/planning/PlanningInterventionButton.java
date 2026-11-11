@@ -34,8 +34,10 @@ final class PlanningInterventionButton extends JButton {
 		this.intervention = intervention;
 		this.weekly = weekly;
 		String employee = intervention.getEmployee() == null ? "Non attribué" : intervention.getEmployee().toString();
-		if (weekly && intervention.getEmployee() != null)
+
+		if (weekly && intervention.getEmployee() != null) {
 			employee = intervention.getEmployee().getLastName() + " " + intervention.getEmployee().getFirstName();
+		}
 
 		lines = weekly ? List.of(employee, intervention.getClient().getLastName() + " "
 				+ intervention.getClient().getFirstName())
@@ -44,18 +46,22 @@ final class PlanningInterventionButton extends JButton {
 		if (weekly) {
 			setMargin(new Insets(1, 3, 1, 3));
 			setToolTipText("Intervenant : " + employee + " | Client : " + intervention.getClient()
-					+ " | " + intervention.getStartDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu"))
+					+ " | "
+					+ intervention.getStartDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu"))
 					+ " " + intervention.getStartTime() + " → "
 					+ intervention.getEndDate().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/uuuu"))
 					+ " " + intervention.getEndTime());
 		}
+
 		getAccessibleContext().setAccessibleName(String.join(", ", lines));
 	}
 
 	@Override
 	public Dimension getPreferredSize() {
-		if (lines == null)
+
+		if (lines == null) {
 			return super.getPreferredSize();
+		}
 
 		FontMetrics metrics = getFontMetrics(getFont());
 		Insets insets = getInsets();
@@ -71,6 +77,7 @@ final class PlanningInterventionButton extends JButton {
 		Graphics2D text = (Graphics2D) graphics.create();
 
 		try {
+
 			if (weekly) {
 				paintWeeklyNames(text);
 			} else {
@@ -91,7 +98,9 @@ final class PlanningInterventionButton extends JButton {
 					text.drawString(line, x, y);
 					y += metrics.getHeight();
 				}
+
 			}
+
 		} finally {
 			text.dispose();
 		}
@@ -107,7 +116,9 @@ final class PlanningInterventionButton extends JButton {
 			} finally {
 				pastGraphics.dispose();
 			}
+
 		}
+
 	}
 
 	static Color nameColor(boolean employee, boolean dark) {
@@ -120,8 +131,11 @@ final class PlanningInterventionButton extends JButton {
 		int height = Math.max(0, getHeight() - insets.top - insets.bottom);
 		Font font = getFont().deriveFont(Font.PLAIN, 12f);
 		FontMetrics metrics = text.getFontMetrics(font);
-		if (height < metrics.getHeight())
+
+		if (height < metrics.getHeight()) {
 			return;
+		}
+
 		text.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 		text.clipRect(insets.left, insets.top, width, height);
 		text.setFont(font);
@@ -130,10 +144,12 @@ final class PlanningInterventionButton extends JButton {
 		int y = insets.top + (height - count * metrics.getHeight()) / 2 + metrics.getAscent();
 		String employee = lines.getFirst();
 		text.drawString(fitName(employee, width, metrics), insets.left, y);
+
 		if (count > 1) {
 			text.setColor(UIUtils.getPlaceholderColor());
 			text.drawString(fitName(lines.get(1), width, metrics), insets.left, y + metrics.getHeight());
 		}
+
 	}
 
 	private static void drawName(Graphics2D text, String name, boolean employee, int left, int y, int width,
@@ -147,34 +163,46 @@ final class PlanningInterventionButton extends JButton {
 	}
 
 	private static String compactName(String name) {
-		if ("Non attribué".equals(name))
+
+		if ("Non attribué".equals(name)) {
 			return name;
+		}
 
 		StringBuilder initials = new StringBuilder();
 
 		for (String word : name.split("\\s+")) {
-			if (!word.isEmpty())
+
+			if (!word.isEmpty()) {
 				initials.appendCodePoint(word.codePointAt(0)).append('.');
+			}
+
 		}
 
 		return initials.toString();
 	}
 
 	private static String fitName(String name, int width, FontMetrics metrics) {
-		if (metrics.stringWidth(name) <= width)
-			return name;
-		if (metrics.stringWidth("…") > width)
-			return "";
 
-		while (!name.isEmpty() && metrics.stringWidth(name + "…") > width)
+		if (metrics.stringWidth(name) <= width) {
+			return name;
+		}
+
+		if (metrics.stringWidth("…") > width) {
+			return "";
+		}
+
+		while (!name.isEmpty() && metrics.stringWidth(name + "…") > width) {
 			name = name.substring(0, name.offsetByCodePoints(name.length(), -1));
+		}
 
 		return name + "…";
 	}
 
 	private void prepareLines(int width, FontMetrics metrics) {
-		if (wrappedWidth == width && getFont().equals(wrappedFont))
+
+		if (wrappedWidth == width && getFont().equals(wrappedFont)) {
 			return;
+		}
 
 		List<String> result = new ArrayList<>();
 
@@ -190,6 +218,7 @@ final class PlanningInterventionButton extends JButton {
 				} else {
 					current = candidate;
 				}
+
 			}
 
 			result.add(current);

@@ -11,7 +11,6 @@ import java.util.function.Predicate;
 import gestion.model.Client;
 import gestion.repository.ClientCsvRepository;
 import gestion.repository.CsvReferences;
-import gestion.repository.CsvStore;
 import gestion.util.DomainValidation;
 
 public class ClientService {
@@ -29,8 +28,11 @@ public class ClientService {
 	}
 
 	public void requireKnown(Client person) {
-		if (person == null || !clients.contains(person))
+
+		if (person == null || !clients.contains(person)) {
 			throw new IllegalArgumentException("Veuillez choisir une personne de la liste actuelle.");
+		}
+
 	}
 
 	private boolean referenced(Client person) {
@@ -41,12 +43,15 @@ public class ClientService {
 
 		DomainValidation.client(candidate);
 
-		for (Client person : clients)
+		for (Client person : clients) {
 
 			if (person != original && person.getFirstName().equals(candidate.getFirstName())
-					&& person.getLastName().equals(candidate.getLastName()))
+					&& person.getLastName().equals(candidate.getLastName())) {
 				throw new IllegalArgumentException(
 						"Ce prénom et ce nom existent déjà ; les homonymes ne sont pas encore pris en charge.");
+			}
+
+		}
 
 	}
 
@@ -77,14 +82,17 @@ public class ClientService {
 	public void editClients(int index, String firstName, String lastName, String address, double totalHoursContract,
 			LocalDate contractStartDate, LocalDate contractEndDate) {
 
-		if (index < 0 || index >= clients.size())
+		if (index < 0 || index >= clients.size()) {
 			throw new IllegalArgumentException("Veuillez sélectionner un client.");
+		}
+
 		Client client = clients.get(index);
 		Client candidate = new Client(firstName, lastName, address, totalHoursContract, contractStartDate,
 				contractEndDate, client.getClientID());
 		validateIdentity(candidate, client);
 		Client previous = new Client(client.getFirstName(), client.getLastName(), client.getAddress(),
-				client.getTotalHoursContract(), client.getContractStartDate(), client.getContractEndDate(), client.getClientID());
+				client.getTotalHoursContract(), client.getContractStartDate(), client.getContractEndDate(),
+				client.getClientID());
 		ArrayList<Client> order = new ArrayList<>(clients);
 		ServiceChanges.apply(getDirectory(), () -> {
 			copyValues(candidate, client);
@@ -125,12 +133,14 @@ public class ClientService {
 
 	public void removeClient(int index) {
 
-		if (index < 0 || index >= clients.size())
+		if (index < 0 || index >= clients.size()) {
 			throw new IllegalArgumentException("Veuillez sélectionner un client.");
+		}
 
-		if (referenced(clients.get(index)))
+		if (referenced(clients.get(index))) {
 			throw new IllegalArgumentException(
 					"Suppression refusée : ce client est encore référencé par une intervention ou une série.");
+		}
 
 		changeList(list -> list.remove(index));
 	}

@@ -1,15 +1,37 @@
 package gestionTest;
 
-import static org.junit.jupiter.api.Assertions.*;
-import java.io.*;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
-import org.junit.jupiter.api.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import gestion.model.*;
-import gestion.repository.*;
-import gestion.service.*;
+
+import gestion.model.Employee;
+import gestion.model.EmployeeAbsence;
+import gestion.model.EmployeeStatus;
+import gestion.model.Intervention;
+import gestion.model.RecurringIntervention;
+import gestion.repository.ClientCsvRepository;
+import gestion.repository.EmployeeCsvRepository;
+import gestion.repository.InterventionCsvRepository;
+import gestion.service.ClientService;
+import gestion.service.PersonnelService;
+import gestion.service.PlanningService;
 import gestion.util.FormatUtils;
 import gestionTest.support.TestFixture;
 
@@ -81,8 +103,10 @@ class ReliabilityRegressionTest {
 				() -> f.clients.editClients(0, "Client", "Fictif", "Adresse", 0, f.future.plusDays(1), f.future));
 		assertEquals(before, f.files());
 
-		for (String text : List.of("-5", "1e309", "35h30h45", "12h60", "NaN", "35h-1"))
+		for (String text : List.of("-5", "1e309", "35h30h45", "12h60", "NaN", "35h-1")) {
 			assertThrows(NumberFormatException.class, () -> FormatUtils.parseContractHours(text));
+		}
+
 		assertEquals(0, FormatUtils.parseContractHours("0"));
 		assertEquals(35.5, FormatUtils.parseContractHours("35h30"));
 		assertEquals(35.5, FormatUtils.parseContractHours("35,5"));
@@ -122,7 +146,8 @@ class ReliabilityRegressionTest {
 
 		var personnel = new gestion.service.PersonnelService(new gestion.repository.EmployeeCsvRepository(directory));
 		var clients = new gestion.service.ClientService(new gestion.repository.ClientCsvRepository(directory));
-		var loaded = new gestion.repository.InterventionCsvRepository(directory).load(personnel.getEmployees(), clients.getClients());
+		var loaded = new gestion.repository.InterventionCsvRepository(directory).load(personnel.getEmployees(),
+				clients.getClients());
 		assertEquals(employeeId, loaded.getFirst().getEmployee().getEmployeeID());
 		assertEquals("Renommée", loaded.getFirst().getEmployee().getLastName());
 		assertEquals(clientId, loaded.getFirst().getClient().getClientID());
@@ -274,8 +299,10 @@ class ReliabilityRegressionTest {
 		for (EmployeeAbsence invalid : List.of(new EmployeeAbsence(null, EmployeeStatus.VACATION, f.future, f.future),
 				new EmployeeAbsence(f.a, null, f.future, f.future),
 				new EmployeeAbsence(f.a, EmployeeStatus.OPERATIONAL, f.future, f.future),
-				new EmployeeAbsence(f.a, EmployeeStatus.VACATION, f.future.plusDays(1), f.future)))
+				new EmployeeAbsence(f.a, EmployeeStatus.VACATION, f.future.plusDays(1), f.future))) {
 			assertThrows(IllegalArgumentException.class, () -> f.absences.addAbsence(invalid));
+		}
+
 		assertEquals(before, f.files());
 
 		EmployeeAbsence first = new EmployeeAbsence(f.a, EmployeeStatus.VACATION, f.future, f.future);

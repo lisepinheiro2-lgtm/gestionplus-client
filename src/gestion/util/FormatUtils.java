@@ -23,6 +23,7 @@ public class FormatUtils {
 		} catch (DateTimeParseException e) {
 			return LocalDate.parse(text.trim(), shortYear);
 		}
+
 	}
 
 	public static String formatDay(DayOfWeek day) {
@@ -30,16 +31,22 @@ public class FormatUtils {
 		switch (day) {
 		case MONDAY:
 			return "Lundi";
+
 		case TUESDAY:
 			return "Mardi";
+
 		case WEDNESDAY:
 			return "Mercredi";
+
 		case THURSDAY:
 			return "Jeudi";
+
 		case FRIDAY:
 			return "Vendredi";
+
 		case SATURDAY:
 			return "Samedi";
+
 		case SUNDAY:
 			return "Dimanche";
 		}
@@ -68,8 +75,10 @@ public class FormatUtils {
 
 	public static double parseContractHours(String text) {
 
-		if (text == null)
+		if (text == null) {
 			throw new NumberFormatException("Heures manquantes.");
+		}
+
 		text = text.trim().toLowerCase(java.util.Locale.ROOT).replace(',', '.');
 		double value;
 
@@ -78,11 +87,14 @@ public class FormatUtils {
 			value = Double.parseDouble(parts[0]) + (parts[1].isEmpty() ? 0 : Integer.parseInt(parts[1])) / 60.0;
 		} else if (text.matches("(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:e[+-]?\\d+)?")) {
 			value = Double.parseDouble(text);
-		} else
+		} else {
 			throw new NumberFormatException("Format d'heures invalide.");
+		}
 
-		if (!Double.isFinite(value) || value < 0)
+		if (!Double.isFinite(value) || value < 0) {
 			throw new NumberFormatException("Heures finies et non négatives attendues.");
+		}
+
 		return value;
 	}
 

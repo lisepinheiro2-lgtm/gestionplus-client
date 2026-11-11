@@ -1,10 +1,14 @@
 package gestion.repository;
 
 import java.nio.file.Path;
-import java.time.*;
-import java.util.*;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-import gestion.model.*;
+import gestion.model.Client;
 import gestion.util.DomainValidation;
 
 public final class ClientCsvRepository {
@@ -50,8 +54,11 @@ public final class ClientCsvRepository {
 
 		for (Client client : clients) {
 			DomainValidation.client(client);
-			if (!savedIds.add(client.getClientID()))
+
+			if (!savedIds.add(client.getClientID())) {
 				throw new IllegalArgumentException("UUID client dupliqué : " + client.getClientID());
+			}
+
 			content.append(CsvFormat.row(client.getFirstName(), client.getLastName(), client.getAddress(),
 					client.getTotalHoursContract(), client.getContractStartDate(), client.getContractEndDate(),
 					client.getClientID().toString()));

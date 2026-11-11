@@ -14,7 +14,153 @@ read_when:
 
 **Gestion+ est un même projet métier, aujourd’hui développé dans deux dépôts.** Le client Swing porte les écrans de gestion ; le chantier Spring Boot prépare les comptes, les contrôles et le stockage centralisé PostgreSQL.
 
-L’objectif exprimé est de réunir à terme les deux projets dans un même ensemble Gestion+. Le choix de l’organisation finale des sources, des modules et des dépôts reste à définir. Cette page donne un repère commun sans fusionner les dépôts ni imposer un nouveau découpage de code.
+Les projets client et serveur restent séparés et doivent pouvoir fonctionner ensemble. Leur intégration, leurs contrats d’échange et la compatibilité de leurs versions restent à construire. Cette page distingue les décisions fonctionnelles, leur historique et les validations techniques.
+
+<a id="decisions-consolidees-2026-11-11"></a>
+
+## Décisions consolidées — 11 novembre 2026
+
+**Référence fonctionnelle actuelle.** Cette consolidation reprend le bilan fourni par l’utilisatrice le 11 novembre. Elle complète les décisions antérieures et remplace leurs formulations incompatibles. Une règle décidée ne constitue pas une fonctionnalité livrée ou testée. Les sections historiques plus bas conservent leur date ; leur ancien « reste à décider » ne rouvre pas les arbitrages ci-dessous.
+
+### 1. Architecture et ordre du chantier
+
+- Client Java Swing ; serveur Spring Boot responsable de l’authentification, des autorisations et des règles métier sensibles ; PostgreSQL source de vérité côté serveur.
+- CSV provisoires pour le stockage de la démo autonome fictive, destinés à céder la place au serveur PostgreSQL pour l’usage connecté ; ils peuvent rester utiles aux imports et exports.
+- Chaque entreprise cliente choisit et exploite son infrastructure, locale ou distante. Le serveur contrôle chaque requête, les permissions, l’entreprise et les structures autorisées. Swing ne fait jamais autorité en matière de sécurité.
+- Sécuriser et terminer le serveur avant de reprendre l’intégration Swing. Le développement complet d’ADMIN_EMERGENCY reste ultérieur.
+- Projets client et serveur séparés, pouvant fonctionner ensemble. Les contrats d’échange et la compatibilité des versions restent à construire au rythme du chantier.
+
+### 2. Entreprise, structures et administration
+
+- Une entreprise possède exactement un SUPER_ADMIN nominatif, créé à sa mise en service. Le provisionnement initial exclusivement par l’éditrice, décidé précédemment, est conservé.
+- La titularité enregistrée sur l’entreprise établit son autorité. Aucun second rôle global contradictoire n’est nécessaire. Cette autorité ne s’étend jamais à une autre entreprise.
+- Une structure active possède exactement un ADMIN. Une personne peut administrer plusieurs structures de la même entreprise. Le SUPER_ADMIN peut lui-même être ADMIN d’autant de ses structures qu’il le souhaite, sans plafond.
+- Seul le SUPER_ADMIN transfère la responsabilité ADMIN et supprime une structure. La fermeture préserve les références d’audit nécessaires et les autres accès des personnes concernées ; elle n’autorise pas un effacement arbitraire des identités ou des preuves.
+
+**Transfert ADMIN.** Le serveur exige une confirmation renforcée, contrôle les droits et l’état confirmé, puis effectue une opération atomique. Le successeur reçoit ADMIN sur la structure concernée. Le SUPER_ADMIN choisit explicitement les rôles et rattachements conservés par l’ancien titulaire, ou sa désactivation ; sans aucun rattachement valide, son compte est désactivé, sous réserve de sa propre titularité SUPER_ADMIN.
+
+Les sessions des personnes concernées sont révoquées. Le récapitulatif présente précisément rôles et structures avant/après et permet d’ouvrir leur gestion pour des ajustements autorisés. L’ancien et le nouvel ADMIN sont informés dans Swing et par e-mail. Un échec de notification n’annule pas le transfert ; il est tracé et repris. Tous les postes ADMIN_EMERGENCY de l’ancien titulaire sont automatiquement révoqués ; le nouvel ADMIN choisit ses propres postes.
+
+### 3. Rôles et permissions
+
+| Rôle | Contrat retenu dans le périmètre autorisé |
+| --- | --- |
+| SUPER_ADMIN | Autorité générale dans son entreprise ; gestion des structures, ADMIN et SECURITY_OFFICER. |
+| ADMIN | Administration complète de ses structures autorisées, sous réserve des opérations réservées et des protections des secrets et audits. |
+| R_H | Gestion des comptes et rôles strictement inférieurs autorisés. |
+| MANAGER | Gestion des salariés explicitement placés sous sa responsabilité, dans les limites de ses permissions. |
+| SECRETARY | Invitations et gestion des comptes, rôles et rattachements autorisés pour EMPLOYEE et TEAM_LEAD. |
+| SECURITY_OFFICER | Consultation des audits selon ses permissions et son périmètre ; aucun pouvoir général de modification. |
+| TEAM_LEAD, EMPLOYEE, ACCOUNTANT | Aucun pouvoir général d’administration des comptes. Les droits métier propres restent distincts. |
+
+- MANAGER et SECRETARY ne s’administrent pas mutuellement et ne sont pas des niveaux interchangeables. Les descriptions antérieures plus restrictives de leur gestion des comptes sont remplacées par ces règles.
+- Un MANAGER n’agit que sur les salariés dont il a explicitement la responsabilité. ADMIN, R_H ou SUPER_ADMIN désignent le responsable, dans leur périmètre.
+- Une opération groupée est refusée dès qu’elle contient un rôle non autorisé. Si une cible possède aussi un rôle que l’opérateur ne peut pas administrer, son compte entier est protégé contre ses modifications administratives.
+- Attribution et retrait d’un rôle sont deux opérations distinctes, chacune contrôlée côté serveur. Une permission d’invitation n’autorise pas une attribution arbitraire.
+- Le SUPER_ADMIN nomme les SECURITY_OFFICER et définit leurs rattachements.
+- VIEW_AUDIT et VIEW_SENSITIVE_AUDIT sont deux permissions distinctes. L’accès aux événements sensibles ne permet jamais de sortir du périmètre autorisé. La matrice détaillée par catégorie d’audit reste à préciser sans inventer de droits pour les autres rôles.
+- La participation de SECURITY_OFFICER à la conservation, avec accord du SUPER_ADMIN ci-dessous, est une compétence particulière ; elle ne lui donne pas un pouvoir général de modification.
+
+### 4. Comptes, invitations et activation
+
+Un salarié peut exister sans compte. Un nouveau compte reste PENDING_ACTIVATION jusqu’à la validation complète de son activation. La personne invitée choisit son identifiant et son mot de passe et valide son identité par le mécanisme prévu. Le parcours e-mail puis code SMS temporaire à tentatives limitées, décidé antérieurement, reste la référence ; sa réalisation doit être distinguée du simple contrat de vérification.
+
+Invitations et codes sont temporaires, à usage limité et protégés contre les tentatives répétées. L’invitation expire après sept jours à compter de l’envoi effectif. Si l’activation n’a pas abouti, le jeton est invalidé et les rôles/rattachements préparés sont retirés atomiquement ; l’identité est conservée. La concurrence entre activation et expiration ne doit pas produire d’état partiel.
+
+Une réintégration exige de nouveaux droits explicitement préparés et une nouvelle activation, sans rétablissement automatique des anciens accès. La perte du dernier accès désactive le compte et révoque ses sessions. Les comptes désactivés et références nécessaires aux audits sont conservés. Listes, recherches, fiches et exports respectent permissions, entreprises et structures. Invitations, renvois et activation résistent aux courses, rejouements et tentatives répétées.
+
+Les précisions P1 déjà retenues restent applicables : réintégration désactivée jusqu’à l’envoi effectif, renvoi sans perte de l’ancien lien avant réussite, remplacement d’une invitation après correction d’adresse avec révocation de l’ancien lien. La nomination ADMIN préparée sur compte en attente et son délai de 24 heures restent un parcours distinct à réaliser ; le transfert courant sur compte actif ne les remplace pas.
+
+### 5. Authentification
+
+**Mots de passe.** Minimum 12 caractères, espaces significatifs autorisés, sans quotas de majuscules, chiffres ou symboles. Refuser les mots de passe compromis, notamment via Have I Been Pwned. Si la vérification est indisponible, création et changement de mot de passe sont bloqués avec un message explicatif dans Swing : aucun contournement silencieux. La connexion avec un mot de passe existant est un parcours distinct de la définition d’un nouveau secret.
+
+Personne ne choisit directement le nouveau mot de passe d’un autre utilisateur. La récupération utilise la vérification d’identité et les canaux prévus, notamment e-mail et SMS. Tout changement de mot de passe révoque les sessions de tous les appareils, y compris celui ayant effectué le changement.
+
+**Sessions en ligne.** Expiration après 30 minutes d’inactivité et 8 heures au maximum. Désactivation, changement sensible des droits ou révocation invalident les sessions concernées. Spring Security gère l’authentification avec sessions serveur et échanges HTTPS.
+
+**MFA.** TOTP obligatoire pour SUPER_ADMIN, ADMIN, SECURITY_OFFICER, R_H, MANAGER et SECRETARY, facultatif pour les autres rôles. Le cumul applique l’exigence la plus forte. Solution sans achat obligatoire ; FIDO2 pourra être envisagé ultérieurement, notamment pour SUPER_ADMIN. Codes personnels de récupération à usage unique et réinitialisation encadrée. Une réinitialisation invalide les anciens facteurs/codes concernés et révoque les sessions.
+
+| Appareil de confiance pour l’authentification en ligne | Durée |
+| --- | --- |
+| SUPER_ADMIN | 24 heures |
+| ADMIN, SECURITY_OFFICER | 7 jours |
+| R_H, MANAGER, SECRETARY | 14 jours |
+
+Un appareil partagé ne peut pas bénéficier de cette confiance ; l’utilisateur peut révoquer ses appareils reconnus. Ces durées ne remplacent ni les durées de session, ni celles de consultation hors ligne, ni les autorisations ADMIN_EMERGENCY. Le traitement technique des cumuls de durées devra être explicité, sans créer d’extension implicite.
+
+**Clés MFA.** Rotation normale par rechiffrement transparent des secrets TOTP, sans réinscription des utilisateurs. En cas de clé compromise : révocation des sessions, suspension des accès privilégiés concernés, puis nouvel enrôlement après vérification renforcée d’identité. Aucun secret d’authentification dans les audits. Le mécanisme de rotation, la conservation des anciennes clés et la restauration des sauvegardes restent à concevoir selon ces exigences.
+
+### 6. Audit et conservation des preuves
+
+L’audit est centralisé côté Spring Boot : authentifications, invitations, comptes, rôles, permissions, opérations sensibles et ADMIN_EMERGENCY. Succès, refus d’autorisation et échecs sont tracés avec acteur, cible, structures, rôles, opération, date et résultat. Les identifiants, périmètres et horodatages de référence proviennent du serveur, sans confiance aveugle dans Swing.
+
+Une modification nécessitant un audit obligatoire est annulée si cet audit ne peut être enregistré. Les tentatives refusées restent traçables même si la transaction métier échoue. Pour le hors ligne, distinguer la date déclarée par le poste de la réception par le serveur. Protéger les preuves contre la falsification et les suppressions arbitraires, avec consultation limitée au périmètre et aux permissions.
+
+**Conservation décidée.** Durées configurables par entreprise et catégorie de journal. Le SUPER_ADMIN modifie la politique ; SECURITY_OFFICER peut intervenir avec son accord. Chaque changement est justifié et audité. Les anciens événements conservent leur échéance initiale ; la nouvelle durée ne s’applique qu’aux nouveaux événements. Aucun nombre de jours légal ou uniforme n’est inventé.
+
+Les événements liés à une enquête ou un litige peuvent être placés sous gel de conservation ciblé, justifié et tracé. Conditions de levée, autorité habilitée et contrôles associés restent à préciser s’ils ne sont pas déjà définis dans une autre décision explicite.
+
+Après synchronisation hors ligne, l’audit des modifications reste obligatoirement enregistré côté serveur. Les journaux détaillés locaux ne sont nettoyés qu’après confirmation fiable de leur traitement ET de leur enregistrement serveur, y compris pour les opérations rejetées ou mises en quarantaine.
+
+### 7. Consultation hors ligne des utilisateurs ordinaires
+
+- Première connexion sur un ordinateur obligatoirement en ligne. Seuls les postes préalablement autorisés par ADMIN peuvent conserver des données hors ligne ; ADMIN et SUPER_ADMIN peuvent révoquer ces postes.
+- Autorisation individuelle, authentification propre et espace chiffré isolé pour chaque utilisateur, y compris sur un ordinateur partagé. Les rôles soumis au MFA fournissent mot de passe et TOTP hors ligne.
+- Consultation seule, sans modification métier. Sept jours maximum depuis la dernière vérification des droits en ligne ; à l’expiration, bloquer l’accès et supprimer les données locales concernées.
+- Après perte de permissions, rendre les données correspondantes inaccessibles et les supprimer à la prochaine connexion au serveur. Verrouiller après 15 minutes d’inactivité hors ligne.
+- Précharger automatiquement toutes les données autorisées, même jamais consultées ; stockage local chiffré. Synchroniser au démarrage, puis actualiser de façon automatique et incrémentale en arrière-plan.
+- Passage hors ligne après confirmation et avertissement sur les données potentiellement périmées. Retour en ligne automatique après vérification des droits, avec information de l’utilisateur.
+
+### 8. ADMIN_EMERGENCY
+
+**Accès.** Mode de secours réservé à ADMIN dans ses structures autorisées. Chaque ADMIN autorise ses propres postes après authentification forte récente, avec deux ordinateurs au maximum par ADMIN et première préparation en ligne. Authentification hors ligne par mot de passe Gestion+ et TOTP. Aucune limite fixe de durée pour ce mode de secours ; cette décision remplace l’ancienne exigence générale d’expiration locale pour ADMIN_EMERGENCY, sans modifier les sept jours de consultation ordinaire.
+
+Après cinq échecs de connexion, limitation progressive, persistante autant que techniquement possible. Modifications métier étendues pour les fonctions compatibles ; aucune gestion hors ligne des comptes, rôles ou permissions, ni exécution définitive d’opérations critiques nécessitant le serveur. La liste exacte reste à préciser module par module.
+
+**Révocation.** Un poste définitivement révoqué ne synchronise plus ses modifications, même réalisées avant la révocation. À son retour au serveur, détruire ses données locales et clés associées. Un transfert ADMIN révoque automatiquement tous les postes de l’ancien titulaire ; le successeur choisit les siens. Un poste totalement déconnecté ne peut pas recevoir immédiatement cette révocation.
+
+**Synchronisation.** Acceptation automatique des opérations sûres et sans conflit après contrôles serveur ; confirmation humaine des opérations importantes ; résolution hybride assistée des conflits, sans écrasement silencieux. Le serveur conserve l’autorité sur droits, règles métier, intégrité et dépendances. La quarantaine d’actions ambiguës d’un ancien ADMIN ne concerne éventuellement que le cas distinct où ses droits sont révoqués sans révocation définitive du poste ; voir le point à clarifier ci-dessous.
+
+**Sauvegardes et récupération.** Sauvegardes locales chiffrées avec contrôle d’intégrité ; supports externes autorisés et chiffrés possibles. Restauration sur le deuxième poste déjà autorisé, même sans serveur, après authentification forte. En cas de corruption, utiliser une sauvegarde vérifiable. Ne récupérer les opérations plus récentes que si leur journal indépendant est fiable. Rapport détaillé des modifications non récupérées, non appliquées ou rejetées ; toute perte non entièrement reconstituable est signalée explicitement.
+
+**Passage A/B.** Transfert sécurisé de l’état avant chaque changement de poste : contrôle léger sans modification, export chiffré/import/vérification sinon. Identifiants uniques pour éviter les doubles applications et dernier état fiable disponible sur le poste qui reprend. Si A tombe en panne avant transfert, B peut repartir de sa dernière sauvegarde fiable avec avertissement. Si A revient, réconciliation hors ligne via support sécurisé ; seuls les conflits et leurs dépendances bloquent. Après réconciliation, un seul poste poursuit les modifications et l’autre reste en consultation.
+
+**Support perdu ou compromis.** Un ADMIN peut préparer un nouveau support depuis un poste autorisé pendant la panne. Le support déclaré perdu et remplacé est définitivement retiré. Retrouvé ensuite, ses anciennes modifications ne sont importées que dans une quarantaine isolée : examen individuel et réintégration locale provisoire des opérations vérifiables sans conflit. Les contrôles serveur restent obligatoires au retour en ligne.
+
+### 9. Corrections, conflits et notifications
+
+Une correction automatique n’est possible que si elle est sûre. Les opérations dépendantes non résolues passent en quarantaine ; les indépendantes restent utilisables. ADMIN et SUPER_ADMIN résolvent dans leurs périmètres, sans pouvoir approuver un contournement des règles serveur. Rapports détaillés et audit des corrections, acceptations et rejets.
+
+L’ADMIN concerné et le SUPER_ADMIN reçoivent un rapport détaillé ; les personnes directement concernées sont automatiquement averties sans information hors de leurs permissions. Notifications systématiques dans Swing avec historique. Pour ces notifications de correction, l’e-mail complémentaire est facultatif, générique, sans données métier sensibles et soumis à la configuration de messagerie de l’entreprise. Le transfert ADMIN conserve sa règle spécifique d’information par e-mail. Un échec d’envoi ne bloque pas le traitement et doit pouvoir être repris.
+
+Chaque notification de correction exige une confirmation explicite de lecture. Jusqu’à confirmation, seules les actions dépendant des données corrigées sont bloquées ; la consultation des données corrigées reste possible. Accusé enregistré uniquement en ligne auprès du serveur ; il ne constitue pas une acceptation de la modification.
+
+### 10. Arbitrages fonctionnels encore ouverts
+
+- Actions métier autorisées, différées ou interdites hors ligne, module par module.
+- Catégories particulièrement sensibles à protéger davantage ou à exclure du stockage local.
+- Comportement face à une horloge reculée ou incohérente, notamment pour les sept jours et le TOTP.
+- Récupération extrême lorsque facteurs MFA, codes de secours et responsables habilités sont simultanément indisponibles.
+- Conditions de levée du gel des preuves, autorités habilitées et contrôles associés.
+
+### 11. Conception technique et vérifications restantes
+
+Ces travaux ne sont pas des décisions déjà réalisées dans le code : protection et éventuel ancrage matériel des clés hors ligne ; séparation des utilisateurs ; détection des états anciens et doublons entre postes déconnectés ; intégrité et durabilité des journaux ; identifiants d’opérations, idempotence, dépendances et concurrence ; notifications et invitations durables avec reprises ; cohérence des anciennes données et migrations ; secrets, sauvegardes, restauration, mises à jour et exploitation selon l’infrastructure cliente.
+
+Le choix des durées des appareils de confiance, du blocage en cas de panne HIBP et des objectifs de rotation MFA est acté. Les mécanismes nécessaires et leurs preuves restent à construire ou à vérifier, sans rouvrir ces décisions par une option technique contradictoire.
+
+### 12. Incohérences à clarifier avant implémentation
+
+**Ancien ADMIN et récupération du travail.** L’examen de ses modifications après retrait de ses droits et le rejet définitif après révocation du poste ne sont compatibles que dans des situations distinctes. Lors d’un transfert ordinaire, tous ses postes sont révoqués : aucune récupération de leurs modifications non synchronisées n’est donc autorisée par défaut. Le traitement exact de l’autre cas reste à confirmer avant implémentation ; une quarantaine ne contourne pas un rejet définitif.
+
+**Fraîcheur entre deux postes déconnectés.** Une signature valide prouve l’intégrité d’un état, pas l’absence d’une modification ultérieure sur l’autre poste toujours déconnecté. La garantie du « dernier état » nécessite un dispositif supplémentaire ou une règle conservatrice à concevoir. Aucun mécanisme n’est réputé choisi ni validé par cette consolidation.
+
+**Portée de la séance.** Mise à jour documentaire et comparaison statique des sources locales, y compris non commitées. Aucun code applicatif, test, build, serveur ou migration exécuté ou modifié, aucune opération Git modifiante. Les essais antérieurs restent limités à leurs dates et périmètres.
+
+## Historique des décisions antérieures
+
+Les entrées suivantes gardent leur contexte d’origine. En cas de divergence, appliquer la consolidation du 11 novembre ci-dessus.
 
 <a id="inscription-et-rattachements-2026-11-09"></a>
 ## Compte global, rattachements et première inscription — 9 novembre 2026

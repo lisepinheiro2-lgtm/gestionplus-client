@@ -1,12 +1,31 @@
 package gestionTest.support;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
-import gestion.model.*;
-import gestion.repository.*;
-import gestion.service.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Base64;
+import java.util.Map;
+import java.util.TreeMap;
+
+import gestion.model.Client;
+import gestion.model.Employee;
+import gestion.model.Intervention;
+import gestion.model.RecurringIntervention;
+import gestion.repository.AbsenceCsvRepository;
+import gestion.repository.ClientCsvRepository;
+import gestion.repository.EmployeeCsvRepository;
+import gestion.repository.InterventionCsvRepository;
+import gestion.repository.RecurringInterventionCsvRepository;
+import gestion.repository.ReplacementCsvRepository;
+import gestion.service.AbsenceService;
+import gestion.service.ClientService;
+import gestion.service.PersonnelService;
+import gestion.service.PlanningService;
+import gestion.service.RecurringInterventionService;
+import gestion.service.ReplacementService;
 
 public final class TestFixture {
 
@@ -58,9 +77,12 @@ public final class TestFixture {
 		Map<String, String> state = new TreeMap<>();
 
 		try (var paths = Files.list(directory)) {
+
 			for (Path path : paths.filter(p -> p.getFileName().toString().endsWith(".csv") && Files.isRegularFile(p))
-					.toList())
+					.toList()) {
 				state.put(path.getFileName().toString(), Base64.getEncoder().encodeToString(Files.readAllBytes(path)));
+			}
+
 		}
 
 		return state;

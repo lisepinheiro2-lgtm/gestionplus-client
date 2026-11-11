@@ -10,6 +10,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.prefs.Preferences;
+
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -108,9 +109,11 @@ public class MainUI {
 		frame.addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent event) {
+
 				if (frame.isShowing() && frame.getExtendedState() == JFrame.NORMAL) {
 					normalWindowSize = frame.getSize();
 				}
+
 			}
 		});
 
@@ -143,9 +146,11 @@ public class MainUI {
 		if (maximized) {
 			frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
 		}
+
 	}
 
 	private void interventionUI() {
+
 		if (interventionPanel == null) {
 			interventionPanel = new InterventionUI(planning, recurringInterventionList, clients, personnel);
 			addPage(interventionPanel, "INTERVENTIONS");
@@ -156,12 +161,14 @@ public class MainUI {
 	}
 
 	private void clientUI() {
+
 		if (clientPanel == null) {
 			clientPanel = new ClientUI(clients);
 			addPage(clientPanel, "CLIENTS");
 		} else {
 			clientPanel.refreshTable();
 		}
+
 		showPage("CLIENTS", "Clients");
 	}
 
@@ -172,6 +179,7 @@ public class MainUI {
 	}
 
 	private void personnelUI() {
+
 		if (personnelPanel == null) {
 			personnelPanel = new PersonnelPanel(
 					new PersonnelController(personnel, absenceList, new WorkHoursService(planning)), planning,
@@ -185,6 +193,7 @@ public class MainUI {
 	}
 
 	private void planningUI() {
+
 		if (planningPanel == null) {
 			planningPanel = new PlanningUI(planning, personnel, clients, recurringInterventionList);
 			addPage(planningPanel, "PLANNING");
@@ -195,12 +204,14 @@ public class MainUI {
 	}
 
 	private void replacementUI() {
+
 		if (replacementPanel == null) {
 			replacementPanel = new ReplacementUI(replacementList, personnel, planning);
 			addPage(replacementPanel, "REPLACEMENTS");
 		} else {
 			replacementPanel.refreshTable();
 		}
+
 		showPage("REPLACEMENTS", "Remplacements");
 	}
 

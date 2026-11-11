@@ -4,18 +4,19 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.Insets;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -41,20 +42,25 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 			super.doLayout();
 			int height = Math.min(36, getHeight());
 			int top = (getHeight() - height) / 2;
-			for (Component button : getComponents())
+
+			for (Component button : getComponents()) {
 				button.setBounds(button.getX(), top, button.getWidth(), height);
+			}
+
 		}
 	};
 	private final JPanel center = new JPanel(new BorderLayout(0, 6)) {
 		@Override
 		public void doLayout() {
 			super.doLayout();
+
 			if ("Accueil".equals(page.getText()) && page.getParent() == this) {
 				int width = Math.min(getWidth(), page.getPreferredSize().width);
 				int left = (ApplicationHeader.this.getWidth() - width) / 2 - getX();
 				left = Math.max(0, Math.min(left, getWidth() - width));
 				page.setBounds(left, page.getY(), width, page.getHeight());
 			}
+
 		}
 	};
 	private final Map<String, JButton> destinations = new LinkedHashMap<>();
@@ -144,8 +150,11 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 
 	private JButton addDestination(String title, Runnable action) {
 		JButton button = new JButton(title);
-		if (action != null)
+
+		if (action != null) {
 			button.addActionListener(event -> action.run());
+		}
+
 		destinations.put(title, button);
 		navigation.add(button);
 		return button;
@@ -161,6 +170,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 
 	private void updateNavigationLayout() {
 		boolean inlineNavigation = getWidth() >= 1160 && !"Accueil".equals(page.getText());
+
 		if (inlineNavigation && navigation.getParent() != center) {
 			remove(navigation);
 			center.remove(page);
@@ -174,6 +184,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 			add(navigation, BorderLayout.SOUTH);
 			revalidate();
 		}
+
 		page.setVisible(getWidth() < 1160 || "Interventions".equals(page.getText())
 				|| "Accueil".equals(page.getText()));
 	}
@@ -193,6 +204,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, border),
 				BorderFactory.createEmptyBorder(2, 32, 2, 24)));
 		theme.setSelected(dark);
+
 		for (var entry : destinations.entrySet()) {
 			JButton button = entry.getValue();
 			boolean active = entry.getKey().equals(page.getText())
@@ -220,7 +232,6 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 
 		String style = "arc:12;borderWidth:0;focusWidth:1;innerFocusWidth:0;background:" + hex(background)
 				+ ";foreground:" + hex(foreground) + ";hoverBackground:" + hex(border);
-
 
 		account.putClientProperty("FlatLaf.style", style);
 	}

@@ -6,11 +6,12 @@ import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
+
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.Icon;
@@ -124,13 +125,17 @@ public final class HomeCardButton extends RavenStyledButton implements AppThemeA
 	}
 
 	void setContentScale(double scale) {
-		if (Math.abs(contentScale - scale) < .001)
+
+		if (Math.abs(contentScale - scale) < .001) {
 			return;
+		}
+
 		contentScale = scale;
 		heading.setFont(heading.getFont().deriveFont((float) (18 * scale)));
 		description.setFont(description.getFont().deriveFont((float) (12 * scale)));
 		status.setFont(status.getFont().deriveFont((float) (11 * scale)));
-		// BoxLayout may retain the previous label widths while a hidden page is resized.
+		// BoxLayout may retain the previous label widths while a hidden page is
+		// resized.
 		java.awt.Container textColumn = heading.getParent();
 		((BoxLayout) textColumn.getLayout()).invalidateLayout(textColumn);
 		((BorderLayout) getLayout()).setHgap(scaled(18));

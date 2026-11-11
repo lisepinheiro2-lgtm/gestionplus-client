@@ -1,6 +1,7 @@
 package gestion.ui.raven;
 
 import java.beans.Beans;
+
 import javax.swing.JToggleButton;
 
 /**
@@ -17,12 +18,16 @@ public class RavenDarkLightSwitch extends JToggleButton {
 		addActionListener(e -> {
 
 			if (!Beans.isDesignTime() && changeApplicationTheme) {
-				if (isSelected())
+
+				if (isSelected()) {
 					com.formdev.flatlaf.FlatDarkLaf.setup();
-				else
+				} else {
 					com.formdev.flatlaf.FlatLightLaf.setup();
+				}
+
 				com.formdev.flatlaf.FlatLaf.updateUI();
 			}
+
 		});
 	}
 

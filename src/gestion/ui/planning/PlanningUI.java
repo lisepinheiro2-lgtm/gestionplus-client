@@ -1,16 +1,12 @@
 package gestion.ui.planning;
 
 import java.awt.BorderLayout;
-import java.io.UncheckedIOException;
-import gestion.ui.ActionDialogs;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.Rectangle;
@@ -18,6 +14,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.UncheckedIOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -30,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultListCellRenderer;
@@ -41,17 +39,18 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
-import gestion.model.Intervention;
-import gestion.model.DateRange;
 import gestion.model.Client;
+import gestion.model.DateRange;
 import gestion.model.Employee;
+import gestion.model.Intervention;
 import gestion.service.ClientService;
 import gestion.service.PersonnelService;
 import gestion.service.PlanningService;
 import gestion.service.RecurringInterventionService;
-import gestion.ui.UIUtils;
+import gestion.ui.ActionDialogs;
 import gestion.ui.AppThemeAware;
 import gestion.ui.NavigationIcon;
+import gestion.ui.UIUtils;
 import gestion.util.FormatUtils;
 
 public class PlanningUI extends JPanel {
@@ -80,8 +79,10 @@ public class PlanningUI extends JPanel {
 	private record ViewPeriod(LocalDate start, boolean weekly, String search) {
 
 		DateRange range() {
-			if (weekly)
+
+			if (weekly) {
 				return new DateRange(start, start.plusDays(6));
+			}
 
 			LocalDate first = start.with(DayOfWeek.MONDAY);
 			LocalDate last = start.plusMonths(1).minusDays(1).with(DayOfWeek.SUNDAY);
@@ -128,8 +129,10 @@ public class PlanningUI extends JPanel {
 		}
 
 		void showDay(LocalDate day) {
-			if (day.equals(detailsDay))
+
+			if (day.equals(detailsDay)) {
 				return;
+			}
 
 			JPanel next = createDayDetails(days.getOrDefault(day, List.of()));
 			UIUtils.applyTheme(next);
@@ -138,8 +141,10 @@ public class PlanningUI extends JPanel {
 			details.revalidate();
 			details.repaint();
 
-			if (detailsDay != null)
+			if (detailsDay != null) {
 				dayColumns.get((int) java.time.temporal.ChronoUnit.DAYS.between(monday, detailsDay)).repaint();
+			}
+
 			dayColumns.get((int) java.time.temporal.ChronoUnit.DAYS.between(monday, day)).repaint();
 			((JScrollPane) getLeftComponent()).getColumnHeader().repaint();
 			detailsDay = day;
@@ -215,6 +220,7 @@ public class PlanningUI extends JPanel {
 		navigationPanel.addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent event) {
+
 				if (navigationPanel.getWidth() >= 1240 && search.getParent() != actionPanel) {
 					navigationPanel.remove(search);
 					actionPanel.add(search, 0);
@@ -224,6 +230,7 @@ public class PlanningUI extends JPanel {
 					navigationPanel.add(search, BorderLayout.CENTER);
 					navigationPanel.revalidate();
 				}
+
 			}
 		});
 		add(navigationPanel, BorderLayout.NORTH);
@@ -311,18 +318,21 @@ public class PlanningUI extends JPanel {
 					"Confirmer la suppression", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 
 			if (confirmation == JOptionPane.YES_OPTION) {
+
 				try {
 					planning.removeIntervention(intervention);
 					refreshPlanning();
 				} catch (IllegalArgumentException | UncheckedIOException e) {
 					ActionDialogs.error(this, e);
 				}
+
 			}
 			break;
 
 		default:
 			break;
 		}
+
 	}
 
 	private void previousPeriod() {
@@ -354,17 +364,20 @@ public class PlanningUI extends JPanel {
 	}
 
 	private WeekView displayWeek() {
+
 		if (!weekViewportInitialized) {
 			weekScrollPosition = visibleDays.entrySet().stream()
 					.flatMapToInt(entry -> entry.getValue().stream().mapToInt(i -> dayStart(i, entry.getKey())))
 					.min().orElse(8 * 60);
 			weekViewportInitialized = true;
 		}
+
 		LocalDate monday = currentDate.with(DayOfWeek.MONDAY);
 		JPanel bodyPanel = new JPanel(new GridLayout(1, 7));
 		bodyPanel.setPreferredSize(new Dimension(0, 24 * 60));
 		JPanel hoursPanel = new JPanel(new GridLayout(24, 1));
 		hoursPanel.setPreferredSize(new Dimension(56, 24 * 60));
+
 		for (int hour = 0; hour < 24; hour++) {
 			JLabel label = new JLabel(String.format("%02d:00", hour), JLabel.CENTER);
 			label.setVerticalAlignment(JLabel.TOP);
@@ -372,6 +385,7 @@ public class PlanningUI extends JPanel {
 		}
 
 		List<JPanel> dayColumns = new ArrayList<>();
+
 		for (int day = 0; day < 7; day++) {
 			LocalDate currentDay = monday.plusDays(day);
 			List<Intervention> dayInterventions = visibleDays.getOrDefault(currentDay, List.of());
@@ -384,15 +398,21 @@ public class PlanningUI extends JPanel {
 				@Override
 				protected void paintComponent(Graphics graphics) {
 					super.paintComponent(graphics);
+
 					if (currentDay.equals(selectedDay)) {
 						graphics.setColor(new Color(UIUtils.isDarkMode() ? 0x21374F : 0xE4F3FF));
 						graphics.fillRect(0, 0, getWidth(), getHeight());
 					}
+
 					graphics.setColor(UIUtils.getBorderColor());
 					graphics.drawLine(getWidth() - 1, 0, getWidth() - 1, getHeight());
-					for (int hour = 1; hour < 24; hour++)
+
+					for (int hour = 1; hour < 24; hour++) {
 						graphics.drawLine(0, hour * 60, getWidth(), hour * 60);
+					}
+
 					LocalDateTime now = LocalDateTime.now();
+
 					if (currentDay.isBefore(now.toLocalDate())) {
 						drawPastOverlay(graphics, getWidth(), getHeight());
 					} else if (currentDay.equals(now.toLocalDate())) {
@@ -401,16 +421,19 @@ public class PlanningUI extends JPanel {
 						drawPastOverlay(past, getWidth(), getHeight());
 						past.dispose();
 					}
+
 				}
 			};
 			dayPanel.setPreferredSize(new Dimension(0, 24 * 60));
 			dayPanel.addMouseListener(new MouseAdapter() {
 				@Override
 				public void mouseClicked(MouseEvent event) {
+
 					if (SwingUtilities.isLeftMouseButton(event)) {
 						int minutes = Math.max(0, Math.min(1439, event.getY()));
 						dialogs.openAddInterventionChoice(currentDay, LocalTime.of(minutes / 60, minutes % 60));
 					}
+
 				}
 			});
 
@@ -432,12 +455,14 @@ public class PlanningUI extends JPanel {
 
 	private int dayStart(Intervention intervention, LocalDate day) {
 		return intervention.getStartDate().equals(day)
-				? intervention.getStartTime().getHour() * 60 + intervention.getStartTime().getMinute() : 0;
+				? intervention.getStartTime().getHour() * 60 + intervention.getStartTime().getMinute()
+				: 0;
 	}
 
 	private int dayEnd(Intervention intervention, LocalDate day) {
 		return intervention.getEndDate().equals(day)
-				? intervention.getEndTime().getHour() * 60 + intervention.getEndTime().getMinute() : 24 * 60;
+				? intervention.getEndTime().getHour() * 60 + intervention.getEndTime().getMinute()
+				: 24 * 60;
 	}
 
 	private record WeekSlot(int column, int count, List<Intervention> interventions) {
@@ -453,20 +478,26 @@ public class PlanningUI extends JPanel {
 		Map<Integer, List<Intervention>> starts = new java.util.TreeMap<>();
 		Map<Integer, List<Intervention>> ends = new java.util.TreeMap<>();
 		java.util.TreeSet<Integer> boundaries = new java.util.TreeSet<>();
+
 		for (Intervention intervention : interventions) {
 			int start = dayStart(intervention, day);
 			int end = dayEnd(intervention, day);
-			if (end <= start)
+
+			if (end <= start) {
 				continue;
+			}
+
 			starts.computeIfAbsent(start, ignored -> new ArrayList<>()).add(intervention);
 			ends.computeIfAbsent(end, ignored -> new ArrayList<>()).add(intervention);
 			boundaries.add(start);
 			boundaries.add(end);
 		}
+
 		List<Integer> times = new ArrayList<>(boundaries);
 		java.util.LinkedHashSet<Intervention> active = new java.util.LinkedHashSet<>();
 		List<WeekBlock> blocks = new ArrayList<>();
 		Map<WeekSlot, Integer> last = new HashMap<>();
+
 		for (int position = 0; position + 1 < times.size(); position++) {
 			int start = times.get(position);
 			int end = times.get(position + 1);
@@ -474,12 +505,14 @@ public class PlanningUI extends JPanel {
 			active.addAll(starts.getOrDefault(start, List.of()));
 			List<Intervention> current = new ArrayList<>(active);
 			int count = Math.min(capacity, current.size());
+
 			for (int column = 0; column < count; column++) {
 				boolean grouped = current.size() > capacity && column == count - 1;
 				List<Intervention> targets = grouped ? List.copyOf(current.subList(column, current.size()))
 						: List.of(current.get(column));
 				WeekSlot slot = new WeekSlot(column, count, targets);
 				Integer previous = last.get(slot);
+
 				if (previous != null && blocks.get(previous).end() == start) {
 					WeekBlock block = blocks.get(previous);
 					blocks.set(previous, new WeekBlock(block.start(), end, slot));
@@ -487,8 +520,11 @@ public class PlanningUI extends JPanel {
 					last.put(slot, blocks.size());
 					blocks.add(new WeekBlock(start, end, slot));
 				}
+
 			}
+
 		}
+
 		return blocks;
 	}
 
@@ -496,10 +532,13 @@ public class PlanningUI extends JPanel {
 		int capacity = Math.max(2, Math.min(3, dayPanel.getWidth() / 90));
 		WeekLayout layout = (WeekLayout) dayPanel.getClientProperty("planning.layout");
 		boolean rebuild = layout == null || layout.capacity() != capacity;
-		if (!rebuild && Integer.valueOf(dayPanel.getWidth()).equals(dayPanel.getClientProperty("planning.width")))
+
+		if (!rebuild && Integer.valueOf(dayPanel.getWidth()).equals(dayPanel.getClientProperty("planning.width"))) {
 			return;
+		}
 
 		dayPanel.putClientProperty("planning.width", dayPanel.getWidth());
+
 		if (rebuild) {
 			layout = new WeekLayout(capacity, weekBlocks(interventions, day, capacity));
 			dayPanel.putClientProperty("planning.layout", layout);
@@ -508,6 +547,7 @@ public class PlanningUI extends JPanel {
 			for (WeekBlock block : layout.blocks()) {
 				List<Intervention> targets = block.slot().interventions();
 				JButton button;
+
 				if (targets.size() == 1) {
 					Intervention intervention = targets.getFirst();
 					button = new PlanningInterventionButton(intervention, intervention.getStartTime().toString(),
@@ -528,8 +568,10 @@ public class PlanningUI extends JPanel {
 					((PlanningGroupButton) button).applyAppTheme(UIUtils.isDarkMode());
 					button.addActionListener(event -> openGroup(day, targets));
 				}
+
 				dayPanel.add(button);
 			}
+
 		}
 
 		for (int index = 0; index < layout.blocks().size(); index++) {
@@ -539,6 +581,7 @@ public class PlanningUI extends JPanel {
 			dayPanel.getComponent(index).setBounds(left + 3, block.start(), Math.max(1, right - left - 6),
 					block.end() - block.start());
 		}
+
 	}
 
 	private JPanel createDayDetails(List<Intervention> interventions) {
@@ -550,14 +593,16 @@ public class PlanningUI extends JPanel {
 		JLabel day = new JLabel(selectedDay.format(DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH)));
 		day.setFont(day.getFont().deriveFont(Font.BOLD, 17f));
 		heading.add(day);
-		heading.add(new JLabel(interventions.size() + " intervention(s)" + (search.getText().isBlank() ? "" : " — recherche")));
+		heading.add(new JLabel(
+				interventions.size() + " intervention(s)" + (search.getText().isBlank() ? "" : " — recherche")));
 		panel.add(heading, BorderLayout.NORTH);
 		javax.swing.JList<Intervention> list = new javax.swing.JList<>(interventions.toArray(Intervention[]::new)) {
 			@Override
 			public String getToolTipText(MouseEvent event) {
 				int index = locationToIndex(event.getPoint());
 				return index >= 0 && getCellBounds(index, index).contains(event.getPoint())
-						? interventionDescription(getModel().getElementAt(index), false) : null;
+						? interventionDescription(getModel().getElementAt(index), false)
+						: null;
 			}
 		};
 		list.setFixedCellHeight(88);
@@ -570,9 +615,12 @@ public class PlanningUI extends JPanel {
 			@Override
 			public void mouseClicked(MouseEvent event) {
 				int index = list.locationToIndex(event.getPoint());
+
 				if (SwingUtilities.isLeftMouseButton(event) && event.getClickCount() == 1 && index >= 0
-						&& list.getCellBounds(index, index).contains(event.getPoint()))
+						&& list.getCellBounds(index, index).contains(event.getPoint())) {
 					openInterventionActions(list.getModel().getElementAt(index));
+				}
+
 			}
 		});
 		list.getInputMap().put(javax.swing.KeyStroke.getKeyStroke("ENTER"), "interventionActions");
@@ -580,13 +628,19 @@ public class PlanningUI extends JPanel {
 		list.getActionMap().put("interventionActions", new javax.swing.AbstractAction() {
 			@Override
 			public void actionPerformed(java.awt.event.ActionEvent event) {
-				if (list.getSelectedValue() != null)
+
+				if (list.getSelectedValue() != null) {
 					openInterventionActions(list.getSelectedValue());
+				}
+
 			}
 		});
 		JScrollPane scroll = new JScrollPane(list);
-		if (interventions.isEmpty())
+
+		if (interventions.isEmpty()) {
 			scroll.setViewportView(new JLabel("Aucune intervention à afficher."));
+		}
+
 		scroll.getVerticalScrollBar().setUnitIncrement(25);
 		scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 		panel.add(scroll, BorderLayout.CENTER);
@@ -597,10 +651,13 @@ public class PlanningUI extends JPanel {
 		String employee = intervention.getEmployee() == null ? "Intervention non attribuée"
 				: intervention.getEmployee().getFirstName() + " " + intervention.getEmployee().getLastName();
 		String period = intervention.getStartTime() + " – " + intervention.getEndTime();
-		if (!intervention.getStartDate().equals(intervention.getEndDate()))
+
+		if (!intervention.getStartDate().equals(intervention.getEndDate())) {
 			period = intervention.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM")) + " "
 					+ intervention.getStartTime() + " – "
-					+ intervention.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM")) + " " + intervention.getEndTime();
+					+ intervention.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM")) + " "
+					+ intervention.getEndTime();
+		}
 
 		return html ? "<html>" + escape(period) + "<br><b>" + escape(employee) + "</b><br>Client : "
 				+ escape(intervention.getClient().toString()) + "</html>"
@@ -625,6 +682,7 @@ public class PlanningUI extends JPanel {
 		public Component getListCellRendererComponent(javax.swing.JList<? extends Intervention> list,
 				Intervention value, int index, boolean selected, boolean focused) {
 			boolean nextAssigned = value.getEmployee() != null;
+
 			if (assigned == null || assigned != nextAssigned || lookAndFeel != javax.swing.UIManager.getLookAndFeel()) {
 				UIUtils.styleInterventionButton(button, nextAssigned);
 				background = button.getBackground();
@@ -644,14 +702,19 @@ public class PlanningUI extends JPanel {
 	private JPanel interventionList(List<Intervention> interventions) {
 		JPanel list = new JPanel();
 		list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
+
 		for (Intervention intervention : interventions) {
 			String employee = intervention.getEmployee() == null ? "Intervention non attribuée"
 					: intervention.getEmployee().getFirstName() + " " + intervention.getEmployee().getLastName();
 			String period = intervention.getStartTime() + " – " + intervention.getEndTime();
-			if (!intervention.getStartDate().equals(intervention.getEndDate()))
+
+			if (!intervention.getStartDate().equals(intervention.getEndDate())) {
 				period = intervention.getStartDate().format(DateTimeFormatter.ofPattern("dd/MM")) + " "
 						+ intervention.getStartTime() + " – "
-						+ intervention.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM")) + " " + intervention.getEndTime();
+						+ intervention.getEndDate().format(DateTimeFormatter.ofPattern("dd/MM")) + " "
+						+ intervention.getEndTime();
+			}
+
 			JButton button = new JButton("<html>" + escape(period) + "<br><b>" + escape(employee)
 					+ "</b><br>Client : " + escape(intervention.getClient().toString()) + "</html>");
 			button.setHorizontalAlignment(JLabel.LEFT);
@@ -662,16 +725,22 @@ public class PlanningUI extends JPanel {
 			button.getAccessibleContext().setAccessibleName(button.getToolTipText());
 			UIUtils.styleInterventionButton(button, intervention.getEmployee() != null);
 			button.addActionListener(event -> {
+
 				if (Boolean.TRUE.equals(list.getClientProperty("gestion.group"))) {
 					java.awt.Window window = SwingUtilities.getWindowAncestor(button);
-					if (window instanceof javax.swing.JDialog)
+
+					if (window instanceof javax.swing.JDialog) {
 						window.dispose();
+					}
+
 				}
+
 				openInterventionActions(intervention);
 			});
 			list.add(button);
 			list.add(javax.swing.Box.createVerticalStrut(8));
 		}
+
 		return list;
 	}
 
@@ -680,10 +749,13 @@ public class PlanningUI extends JPanel {
 	}
 
 	private void selectDay(LocalDate day) {
-		if (day.equals(selectedDay))
+
+		if (day.equals(selectedDay)) {
 			return;
+		}
 
 		selectedDay = day;
+
 		if (displayedPeriod != null && displayedPeriod.weekly()
 				&& !day.isBefore(displayedPeriod.start()) && !day.isAfter(displayedPeriod.start().plusDays(6))
 				&& displayedPeriod.search().equals(normalize(search.getText()))
@@ -738,6 +810,7 @@ public class PlanningUI extends JPanel {
 					if (day.isBefore(LocalDate.now())) {
 						drawPastOverlay(g, getWidth(), getHeight());
 					}
+
 				}
 			};
 
@@ -754,9 +827,11 @@ public class PlanningUI extends JPanel {
 
 				@Override
 				public void mouseClicked(MouseEvent event) {
+
 					if (SwingUtilities.isLeftMouseButton(event)) {
 						dialogs.openAddInterventionChoice(day, null);
 					}
+
 				}
 			};
 
@@ -821,13 +896,18 @@ public class PlanningUI extends JPanel {
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
 		installDayStrip(scrollPane, monthPanel, dayColumns, calendarStart, true);
 		scrollPane.getVerticalScrollBar().setUnitIncrement(25);
-		LocalDate focus = selectedDay.getMonth().equals(firstDay.getMonth()) && selectedDay.getYear() == firstDay.getYear()
-				? selectedDay : currentDate;
+		LocalDate focus = selectedDay.getMonth().equals(firstDay.getMonth())
+				&& selectedDay.getYear() == firstDay.getYear()
+						? selectedDay
+						: currentDate;
 		JPanel selected = dayColumns.stream().filter(column -> focus.equals(column.getClientProperty("planning.day")))
 				.findFirst().orElse(null);
 		SwingUtilities.invokeLater(() -> {
-			if (selected != null && scrollPane.getParent() == planningPanel)
+
+			if (selected != null && scrollPane.getParent() == planningPanel) {
 				monthPanel.scrollRectToVisible(selected.getBounds());
+			}
+
 		});
 
 		return scrollPane;
@@ -864,10 +944,15 @@ public class PlanningUI extends JPanel {
 				int top = scrollPane.getViewport().getViewPosition().y;
 
 				if (monthly) {
+
 					for (int row = 0; row < dayColumns.size(); row += 7) {
-						if (dayColumns.get(row).getY() <= top)
+
+						if (dayColumns.get(row).getY() <= top) {
 							first = row;
+						}
+
 					}
+
 				}
 
 				Rectangle visible = scrollPane.getViewport().getViewRect();
@@ -879,14 +964,18 @@ public class PlanningUI extends JPanel {
 					int right = Math.min(x + column.getWidth(), visible.x + visible.width);
 					JLabel label = (JLabel) getComponent(day);
 					LocalDate date = firstDay.plusDays(first + day);
+
 					if (!date.equals(label.getClientProperty("day"))) {
 						label.setText("<html><center>" + date.format(DateTimeFormatter.ofPattern("EEEE", Locale.FRENCH))
 								+ "<br>" + date.format(DateTimeFormatter.ofPattern("dd/MM")) + "</center></html>");
-						label.setToolTipText(date.format(DateTimeFormatter.ofPattern("EEEE dd MMMM uuuu", Locale.FRENCH)));
+						label.setToolTipText(
+								date.format(DateTimeFormatter.ofPattern("EEEE dd MMMM uuuu", Locale.FRENCH)));
 						label.putClientProperty("day", date);
 					}
+
 					label.setBounds(left, 0, Math.max(0, right - left), getHeight());
 				}
+
 			}
 		};
 
@@ -914,13 +1003,18 @@ public class PlanningUI extends JPanel {
 
 				@Override
 				public void mouseClicked(MouseEvent event) {
+
 					if (SwingUtilities.isLeftMouseButton(event)) {
 						LocalDate day = (LocalDate) label.getClientProperty("day");
-						if (monthly)
+
+						if (monthly) {
 							dialogs.openAddInterventionChoice(day, null);
-						else
+						} else {
 							selectDay(day);
+						}
+
 					}
+
 				}
 			});
 			strip.add(label);
@@ -943,6 +1037,7 @@ public class PlanningUI extends JPanel {
 	}
 
 	public void refreshPlanning() {
+
 		if (!SwingUtilities.isEventDispatchThread()) {
 			SwingUtilities.invokeLater(this::refreshPlanning);
 			return;
@@ -953,14 +1048,20 @@ public class PlanningUI extends JPanel {
 				&& split.getLeftComponent() instanceof JScrollPane scroll) {
 			weekScrollPosition = scroll.getVerticalScrollBar().getValue();
 			int available = split.getWidth() - split.getDividerSize();
-			if (available > 0)
+
+			if (available > 0) {
 				weekDividerProportion = Math.max(0.4, Math.min(0.9, (double) split.getDividerLocation() / available));
+			}
+
 		}
 
 		boolean weekly = "Semaine".equals(viewBox.getSelectedItem());
 		LocalDate first = currentDate.with(DayOfWeek.MONDAY);
-		if (weekly && (selectedDay.isBefore(first) || selectedDay.isAfter(first.plusDays(6))))
+
+		if (weekly && (selectedDay.isBefore(first) || selectedDay.isAfter(first.plusDays(6)))) {
 			selectedDay = currentDate;
+		}
+
 		ViewPeriod period = new ViewPeriod(weekly ? first : currentDate.withDayOfMonth(1), weekly,
 				normalize(search.getText()));
 		DateTimeFormatter fullFormat = DateTimeFormatter.ofPattern("dd/MM/uuuu");
@@ -976,12 +1077,18 @@ public class PlanningUI extends JPanel {
 		DateRange range = period.range();
 		List<Intervention> interventions = planning.getInterventionsForPeriod(range);
 		String query = normalize(search.getText());
-		if (!query.isBlank())
-			interventions.removeIf(i -> !normalize(i.getClient().getFirstName() + " " + i.getClient().getLastName()).contains(query)
+
+		if (!query.isBlank()) {
+			interventions.removeIf(i -> !normalize(i.getClient().getFirstName() + " " + i.getClient().getLastName())
+					.contains(query)
 					&& !normalize(i.getClient().getLastName() + " " + i.getClient().getFirstName()).contains(query)
 					&& (i.getEmployee() == null
-							|| !normalize(i.getEmployee().getFirstName() + " " + i.getEmployee().getLastName()).contains(query)
-							&& !normalize(i.getEmployee().getLastName() + " " + i.getEmployee().getFirstName()).contains(query)));
+							|| !normalize(i.getEmployee().getFirstName() + " " + i.getEmployee().getLastName())
+									.contains(query)
+									&& !normalize(i.getEmployee().getLastName() + " " + i.getEmployee().getFirstName())
+											.contains(query)));
+		}
+
 		interventions.sort(Comparator.comparing(Intervention::getStartDate).thenComparing(Intervention::getStartTime));
 		List<DisplayedIntervention> content = interventions.stream().map(DisplayedIntervention::new).toList();
 		CachedView cached = views.get(period);
@@ -996,13 +1103,18 @@ public class PlanningUI extends JPanel {
 					: cached.dark() != UIUtils.isDarkMode();
 
 			if (staleTheme) {
-				if (!attached)
+
+				if (!attached) {
 					SwingUtilities.updateComponentTreeUI(component);
+				}
+
 				UIUtils.applyTheme(component);
 			}
 
-			if (component instanceof WeekView week)
+			if (component instanceof WeekView week) {
 				week.showDay(selectedDay);
+			}
+
 		} else {
 			visibleDays = groupByDay(content, range);
 			component = weekly ? displayWeek() : displayMonth();
@@ -1010,11 +1122,14 @@ public class PlanningUI extends JPanel {
 		}
 
 		views.put(period, new CachedView(content, component, visibleDays, UIUtils.isDarkMode()));
-		if (views.size() > 3)
+
+		if (views.size() > 3) {
 			views.remove(views.keySet().iterator().next());
+		}
 
 		displayedPeriod = period;
 		boolean attaching = component.getParent() != planningPanel;
+
 		if (attaching) {
 			planningPanel.removeAll();
 			planningPanel.setLayout(new BorderLayout());
@@ -1027,12 +1142,15 @@ public class PlanningUI extends JPanel {
 			int position = weekScrollPosition;
 			double proportion = weekDividerProportion;
 			SwingUtilities.invokeLater(() -> {
+
 				if (split.getParent() == planningPanel) {
 					split.setDividerLocation(proportion);
 					((JScrollPane) split.getLeftComponent()).getVerticalScrollBar().setValue(position);
 				}
+
 			});
 		}
+
 	}
 
 	private Map<LocalDate, List<Intervention>> groupByDay(List<DisplayedIntervention> content, DateRange period) {
@@ -1042,13 +1160,18 @@ public class PlanningUI extends JPanel {
 			LocalDate first = displayed.start().toLocalDate();
 			LocalDate last = displayed.end().minusNanos(1).toLocalDate();
 
-			if (first.isBefore(period.start()))
+			if (first.isBefore(period.start())) {
 				first = period.start();
-			if (last.isAfter(period.end()))
-				last = period.end();
+			}
 
-			for (LocalDate day = first; !day.isAfter(last); day = day.plusDays(1))
+			if (last.isAfter(period.end())) {
+				last = period.end();
+			}
+
+			for (LocalDate day = first; !day.isAfter(last); day = day.plusDays(1)) {
 				days.computeIfAbsent(day, ignored -> new ArrayList<>()).add(displayed.intervention());
+			}
+
 		}
 
 		return days;

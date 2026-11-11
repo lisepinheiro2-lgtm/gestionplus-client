@@ -2,9 +2,12 @@ package gestion.ui.personnel;
 
 import java.awt.Color;
 import java.awt.Component;
+
 import javax.swing.Icon;
 import javax.swing.JTable;
+
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+
 import gestion.model.EmployeeStatus;
 import gestion.ui.BadgeRenderer;
 import gestion.ui.UIUtils;

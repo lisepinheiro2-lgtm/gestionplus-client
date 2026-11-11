@@ -53,15 +53,21 @@ final class CsvIdentityValidation {
 			UUID original = row.identity(11);
 			register(kinds, original, "salarié");
 
-			if (!row.cells()[12].isEmpty())
+			if (!row.cells()[12].isEmpty()) {
 				register(kinds, row.identity(12), "salarié");
+			}
 
 			requireReference(row, 10, absences, true);
+
 			if (!row.cells()[10].isEmpty()) {
 				UUID absence = row.identity(10);
-				if (!requests.add(absence) || !original.equals(absentEmployees.get(absence)))
+
+				if (!requests.add(absence) || !original.equals(absentEmployees.get(absence))) {
 					throw row.failure("Lien d'absence dupliqué ou salarié absent incohérent : " + absence);
+				}
+
 			}
+
 		}
 
 		for (Row row : input.get("interventions.csv")) {
@@ -70,29 +76,42 @@ final class CsvIdentityValidation {
 			requireReference(row, 8, series, true);
 			requireReference(row, 9, absences, true);
 
-			if (!row.cells()[9].isEmpty() && !requests.contains(row.identity(9)))
+			if (!row.cells()[9].isEmpty() && !requests.contains(row.identity(9))) {
 				throw row.failure("Demande de remplacement liée introuvable pour l'absence " + row.cells()[9]);
+			}
+
 		}
+
 	}
 
 	private static Set<UUID> owners(List<Row> rows, int column, String kind, Map<UUID, String> kinds) {
 		Set<UUID> ids = new HashSet<>();
+
 		for (Row row : rows) {
 			UUID id = row.identity(column);
-			if (!ids.add(id))
+
+			if (!ids.add(id)) {
 				throw row.failure("UUID " + kind + " dupliqué : " + id);
+			}
+
 			register(kinds, id, kind);
 		}
+
 		return ids;
 	}
 
 	private static void requireReference(Row row, int column, Set<UUID> ids, boolean optional) {
-		if (optional && row.cells()[column].isEmpty())
+
+		if (optional && row.cells()[column].isEmpty()) {
 			return;
+		}
 
 		UUID id = row.identity(column);
-		if (!ids.contains(id))
+
+		if (!ids.contains(id)) {
 			throw row.failure("UUID référencé introuvable en colonne " + (column + 1) + " : " + id);
+		}
+
 	}
 
 	private static void validateGraph(Path root) throws IOException {
@@ -114,23 +133,31 @@ final class CsvIdentityValidation {
 			register(kinds, intervention.getInterventionID(), "intervention");
 			String seriesId = intervention.getRecurringId();
 
-			if (seriesId != null && recurring.getRecurringInterventions().stream().noneMatch(r -> r.getId().equals(seriesId)))
+			if (seriesId != null
+					&& recurring.getRecurringInterventions().stream().noneMatch(r -> r.getId().equals(seriesId))) {
 				throw new IOException("interventions.csv : série introuvable " + seriesId
 						+ " pour l'intervention " + intervention.getInterventionID());
+			}
+
 		}
 
 		for (var replacement : replacements.getReplacements()) {
 			register(kinds, replacement.getEmployeeToReplace().getEmployeeID(), "salarié");
 
-			if (replacement.getReplacementEmployee() != null)
+			if (replacement.getReplacementEmployee() != null) {
 				register(kinds, replacement.getReplacementEmployee().getEmployeeID(), "salarié");
+			}
+
 		}
+
 	}
 
 	private static void register(Map<UUID, String> kinds, UUID id, String kind) {
 		String previous = kinds.putIfAbsent(id, kind);
 
-		if (previous != null && !previous.equals(kind))
+		if (previous != null && !previous.equals(kind)) {
 			throw new IllegalArgumentException("UUID " + id + " partagé entre " + previous + " et " + kind);
+		}
+
 	}
 }

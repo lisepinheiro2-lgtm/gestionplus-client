@@ -8,6 +8,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.List;
+
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -22,9 +24,8 @@ import gestion.service.ClientService;
 import gestion.service.PersonnelService;
 import gestion.service.PlanningService;
 import gestion.service.RecurringInterventionService;
-import gestion.util.FormatUtils;
 import gestion.ui.ActionDialogs;
-import java.util.List;
+import gestion.util.FormatUtils;
 
 public final class InterventionCreationDialogs {
 
@@ -68,7 +69,8 @@ public final class InterventionCreationDialogs {
 		JTextField startDateField = new JTextField();
 		JTextField endDateField = new JTextField();
 		endTimeField.setToolTipText("Si la fin précède le début, l'intervention se termine le lendemain.");
-		endDateField.setToolTipText("Dernier jour de départ possible des occurrences, y compris celles finissant le lendemain.");
+		endDateField.setToolTipText(
+				"Dernier jour de départ possible des occurrences, y compris celles finissant le lendemain.");
 
 		formPanel.add(new JLabel("Client :"));
 		formPanel.add(clientBox);
@@ -122,8 +124,11 @@ public final class InterventionCreationDialogs {
 				RecurringIntervention recurring = new RecurringIntervention(selectedClient, selectedEmployee, dayOfWeek,
 						startTime, endTime, startDate, endDate);
 				var preview = planning.previewRecurringInterventions(recurring);
-				if (!ActionDialogs.confirmSaving(parent, planning, preview, null, false))
+
+				if (!ActionDialogs.confirmSaving(parent, planning, preview, null, false)) {
 					return;
+				}
+
 				boolean generated = recurringInterventionList.createWithPlanning(planning, recurring);
 
 				if (!generated) {
@@ -141,7 +146,9 @@ public final class InterventionCreationDialogs {
 			} catch (UncheckedIOException | IllegalArgumentException e) {
 				ActionDialogs.error(parent, e);
 			}
+
 		}
+
 	}
 
 	public void openAddIntervention() {
@@ -234,8 +241,10 @@ public final class InterventionCreationDialogs {
 					continue;
 				}
 
-				if (!ActionDialogs.confirmSaving(parent, planning, List.of(intervention), null, false))
+				if (!ActionDialogs.confirmSaving(parent, planning, List.of(intervention), null, false)) {
 					return;
+				}
+
 				planning.addIntervention(intervention);
 				onChange.run();
 				return;
@@ -250,6 +259,8 @@ public final class InterventionCreationDialogs {
 			} catch (IllegalArgumentException e) {
 				JOptionPane.showMessageDialog(parent, e.getMessage());
 			}
+
 		}
+
 	}
 }

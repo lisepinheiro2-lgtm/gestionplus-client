@@ -52,8 +52,10 @@ public final class EmployeeCsvRepository {
 		for (Employee employee : employees) {
 			DomainValidation.employee(employee);
 
-			if (!savedIds.add(employee.getEmployeeID()))
+			if (!savedIds.add(employee.getEmployeeID())) {
 				throw new IllegalArgumentException("UUID salarié dupliqué : " + employee.getEmployeeID());
+			}
+
 			content.append(CsvFormat.row(employee.getFirstName(), employee.getLastName(), employee.getContractHours(),
 					employee.getStatut(), employee.getAssignedHours(), employee.getRemainingHours(),
 					employee.getEmployeeID().toString()));

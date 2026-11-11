@@ -34,12 +34,13 @@ public final class PersonnelController {
 	}
 
 	public void editEmployee(Employee employee, String firstName, String lastName, String contractHours) {
-		
+
 		double weeklyHours = validateEmployee(firstName, lastName, contractHours);
 		int index = personnel.getEmployees().indexOf(employee);
-		
-		if (index < 0)
+
+		if (index < 0) {
 			throw new IllegalArgumentException("Cet employé n’existe plus.");
+		}
 
 		personnel.editEmployee(index, firstName, lastName, weeklyHours, employee.getStatut(),
 				employee.getAssignedHours(), employee.getRemainingHours());
@@ -47,8 +48,11 @@ public final class PersonnelController {
 
 	public void removeEmployee(Employee employee) {
 		int index = personnel.getEmployees().indexOf(employee);
-		if (index >= 0)
+
+		if (index >= 0) {
 			personnel.removeEmployee(index);
+		}
+
 	}
 
 	public void changeStatus(Employee employee, EmployeeStatus status, String startText, String endText)
@@ -62,8 +66,10 @@ public final class PersonnelController {
 		LocalDate start = FormatUtils.parseDate(startText);
 		LocalDate end = FormatUtils.parseDate(endText);
 
-		if (end.isBefore(start))
+		if (end.isBefore(start)) {
 			throw new IllegalArgumentException("La fin doit être le même jour ou après le début.");
+		}
+
 		absences.addAbsence(new EmployeeAbsence(employee, status, start, end));
 	}
 
@@ -100,19 +106,23 @@ public final class PersonnelController {
 			rows.add(new EmployeeSummary(employee, absences.getStatusAt(employee, statusTime), assigned, remaining,
 					alert, alert));
 		}
+
 		return rows;
 	}
 
 	private static double validateEmployee(String firstName, String lastName, String contractHours) {
-		
-		if (firstName.isBlank() || lastName.isBlank() || contractHours.isBlank())
+
+		if (firstName.isBlank() || lastName.isBlank() || contractHours.isBlank()) {
 			throw new IllegalArgumentException(
 					"Veuillez renseigner le nom, le prénom et les heures prévues au contrat.");
+		}
+
 		try {
 			return FormatUtils.parseContractHours(contractHours);
-		
+
 		} catch (NumberFormatException exception) {
 			throw new IllegalArgumentException("Les heures prévues au contrat doivent être un nombre.", exception);
 		}
+
 	}
 }

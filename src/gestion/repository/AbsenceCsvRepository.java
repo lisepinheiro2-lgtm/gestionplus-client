@@ -2,10 +2,14 @@ package gestion.repository;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.*;
-import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
-import gestion.model.*;
+import gestion.model.Employee;
+import gestion.model.EmployeeAbsence;
+import gestion.model.EmployeeStatus;
 import gestion.util.DomainValidation;
 
 public final class AbsenceCsvRepository {
@@ -46,12 +50,20 @@ public final class AbsenceCsvRepository {
 		DomainValidation.absence(absence);
 
 		for (EmployeeAbsence other : checked) {
-			if (DomainValidation.uuid(absence.getId()).equals(DomainValidation.uuid(other.getId())))
+
+			if (DomainValidation.uuid(absence.getId()).equals(DomainValidation.uuid(other.getId()))) {
 				throw new IllegalArgumentException("Identifiant d'absence dupliqué.");
-			if (absence.getEmployee().getEmployeeID().equals(other.getEmployee().getEmployeeID()) && gestion.util.PeriodUtils
-					.hasDateTimeOverlap(DomainValidation.absencePeriod(absence), DomainValidation.absencePeriod(other)))
+			}
+
+			if (absence.getEmployee().getEmployeeID().equals(other.getEmployee().getEmployeeID())
+					&& gestion.util.PeriodUtils
+							.hasDateTimeOverlap(DomainValidation.absencePeriod(absence),
+									DomainValidation.absencePeriod(other))) {
 				throw new IllegalArgumentException("Absences superposées.");
+			}
+
 		}
+
 	}
 
 	public void save(List<EmployeeAbsence> absences) throws IOException {

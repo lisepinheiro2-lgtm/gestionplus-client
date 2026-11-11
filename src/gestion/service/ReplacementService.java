@@ -29,25 +29,31 @@ public class ReplacementService {
 
 	public void bindPersonnel(PersonnelService personnel) {
 
-		if (this.personnel == personnel)
+		if (this.personnel == personnel) {
 			return;
-		if (this.personnel != null)
+		}
+
+		if (this.personnel != null) {
 			throw new IllegalArgumentException("Personnel déjà associé.");
+		}
 
 		for (Replacement replacement : replacements) {
 			DomainValidation.replacement(replacement);
 
 			if (replacement.getAbsenceId() != null
-					&& personnel.findEmployee(replacement.getEmployeeToReplace()) == null)
-				throw new UncheckedIOException(new IOException("replacements.csv : salarié de l'absence introuvable, UUID "
-						+ replacement.getEmployeeToReplace().getEmployeeID()));
+					&& personnel.findEmployee(replacement.getEmployeeToReplace()) == null) {
+				throw new UncheckedIOException(
+						new IOException("replacements.csv : salarié de l'absence introuvable, UUID "
+								+ replacement.getEmployeeToReplace().getEmployeeID()));
+			}
+
 		}
 
 		this.personnel = personnel;
-		personnel.protectReferences(employee -> replacements.stream().anyMatch(r ->
-				r.getEmployeeToReplace().getEmployeeID().equals(employee.getEmployeeID())
-				|| r.getReplacementEmployee() != null
-				&& r.getReplacementEmployee().getEmployeeID().equals(employee.getEmployeeID())));
+		personnel.protectReferences(employee -> replacements.stream()
+				.anyMatch(r -> r.getEmployeeToReplace().getEmployeeID().equals(employee.getEmployeeID())
+						|| r.getReplacementEmployee() != null
+								&& r.getReplacementEmployee().getEmployeeID().equals(employee.getEmployeeID())));
 	}
 
 	private void validate(Replacement replacement) {
@@ -56,14 +62,19 @@ public class ReplacementService {
 		if (personnel != null) {
 			personnel.requireKnown(replacement.getEmployeeToReplace());
 
-			if (replacement.getReplacementEmployee() != null)
+			if (replacement.getReplacementEmployee() != null) {
 				personnel.requireKnown(replacement.getReplacementEmployee());
+			}
+
 		}
+
 	}
 
 	private static Employee historicalCopy(Employee source) {
-		if (source == null)
+
+		if (source == null) {
 			return null;
+		}
 
 		return new Employee(source.getFirstName(), source.getLastName(), source.getContractHours(), source.getStatut(),
 				source.getAssignedHours(), source.getRemainingHours(), source.getEmployeeID());
@@ -103,8 +114,10 @@ public class ReplacementService {
 			replacements.clear();
 			replacements.addAll(previous);
 
-			for (int i = 0; i < previous.size(); i++)
+			for (int i = 0; i < previous.size(); i++) {
 				copyValues(values.get(i), previous.get(i));
+			}
+
 		};
 	}
 
@@ -114,33 +127,40 @@ public class ReplacementService {
 
 	public void assignUnassignedGroup(PlanningService planning, int index, Employee employee) {
 
-		if (!getDirectory().equals(planning.getDirectory()))
+		if (!getDirectory().equals(planning.getDirectory())) {
 			throw new IllegalArgumentException("Dossiers de données différents.");
+		}
 
-		if (index < 0 || index >= replacements.size() || replacements.get(index).getAbsenceId() == null)
+		if (index < 0 || index >= replacements.size() || replacements.get(index).getAbsenceId() == null) {
 			throw new IllegalArgumentException("Sélectionnez une demande liée à une absence.");
+		}
 
 		var targets = planning.getInterventionsByAbsenceId(replacements.get(index).getAbsenceId());
 		var now = java.time.LocalDateTime.now();
 		targets.removeIf(i -> i.getEmployee() != null || DomainValidation.intervention(i).start().isBefore(now));
 
-		if (targets.isEmpty())
+		if (targets.isEmpty()) {
 			throw new IllegalArgumentException(
 					"Aucune intervention future non attribuée dans cette demande. Les anciennes demandes ne sont pas converties automatiquement.");
+		}
+
 		planning.assignEmployee(targets, employee);
 	}
 
 	public void createWithPlanning(PlanningService planning, Employee original, Employee substitute, String startDate,
 			String startTime, String endDate, String endTime) {
 
-		if (!getDirectory().equals(planning.getDirectory()))
+		if (!getDirectory().equals(planning.getDirectory())) {
 			throw new IllegalArgumentException("Dossiers de données différents.");
+		}
 
 		if (personnel != null) {
 			personnel.requireKnown(original);
 
-			if (substitute != null)
+			if (substitute != null) {
 				personnel.requireKnown(substitute);
+			}
+
 		}
 
 		DomainValidation.employee(original);
@@ -184,8 +204,9 @@ public class ReplacementService {
 			Employee replacementEmployee, double contractHoursReplacementEmployee, String startDate, String startTime,
 			String endDate, String endTime) {
 
-		if (index < 0 || index >= replacements.size())
+		if (index < 0 || index >= replacements.size()) {
 			throw new IllegalArgumentException("Sélectionnez un remplacement.");
+		}
 
 		Replacement candidate = new Replacement(employeeToReplace, contractHoursEmployeeToReplace, replacementEmployee,
 				contractHoursReplacementEmployee, startDate, startTime, endDate, endTime);
@@ -216,9 +237,11 @@ public class ReplacementService {
 		HashSet<String> requiredIds = new HashSet<>();
 
 		for (var intervention : planning.getInterventions()) {
+
 			if (intervention.getSourceAbsenceId() != null) {
 				requiredIds.add(intervention.getSourceAbsenceId());
 			}
+
 		}
 
 		HashSet<String> knownIds = new HashSet<>();
@@ -245,10 +268,12 @@ public class ReplacementService {
 				Replacement linkedReplacement = null;
 
 				for (Replacement replacement : replacements) {
+
 					if (absence.getId().equals(replacement.getAbsenceId())) {
 						linkedReplacement = replacement;
 						break;
 					}
+
 				}
 
 				var period = DomainValidation.absencePeriod(absence);
@@ -275,6 +300,7 @@ public class ReplacementService {
 					linkedReplacement.setEndDate(endDate);
 					linkedReplacement.setEndTime(endTime);
 				}
+
 			}
 
 			sortReplacements();
@@ -288,12 +314,14 @@ public class ReplacementService {
 
 	public void removeReplacement(int index) {
 
-		if (index < 0 || index >= replacements.size())
+		if (index < 0 || index >= replacements.size()) {
 			throw new IllegalArgumentException("Sélectionnez un remplacement.");
+		}
 
-		if (replacements.get(index).getAbsenceId() != null)
+		if (replacements.get(index).getAbsenceId() != null) {
 			throw new IllegalArgumentException(
 					"Cette demande est liée à une absence ; sa suppression directe est désactivée pour préserver le lien.");
+		}
 
 		change(() -> replacements.remove(index));
 	}

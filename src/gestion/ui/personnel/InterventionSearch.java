@@ -20,8 +20,9 @@ final class InterventionSearch {
 	static Predicate<Intervention> filter(String text) {
 		String query = text.strip();
 
-		if (query.isEmpty())
+		if (query.isEmpty()) {
 			return intervention -> true;
+		}
 
 		String dateText = query.replace('-', '/');
 
@@ -31,7 +32,9 @@ final class InterventionSearch {
 		}
 
 		if (dateText.matches("\\d{2}/\\d{2}(?:/(?:\\d{2}|\\d{4}))?")) {
+
 			try {
+
 				if (dateText.length() == 5) {
 					MonthDay day = MonthDay.from(FormatUtils.parseDate(dateText + "/2000"));
 					return intervention -> occursOn(intervention, day);
@@ -42,6 +45,7 @@ final class InterventionSearch {
 			} catch (DateTimeException exception) {
 				return intervention -> false;
 			}
+
 		}
 
 		String name = normalize(query);
@@ -70,24 +74,33 @@ final class InterventionSearch {
 		YearMonth lastMonth = YearMonth.from(last);
 
 		while (true) {
+
 			if (month.isValidDay(day)) {
 				LocalDate date = month.atDay(day);
 
-				if (!date.isBefore(first) && !date.isAfter(last))
+				if (!date.isBefore(first) && !date.isAfter(last)) {
 					return true;
+				}
+
 			}
 
-			if (month.equals(lastMonth))
+			if (month.equals(lastMonth)) {
 				return false;
+			}
 
 			month = month.plusMonths(1);
 		}
+
 	}
 
 	private static boolean occursOn(Intervention intervention, MonthDay day) {
+
 		for (int year = intervention.getStartDate().getYear(); year <= intervention.getEndDate().getYear(); year++) {
-			if (day.isValidYear(year) && occursOn(intervention, day.atYear(year)))
+
+			if (day.isValidYear(year) && occursOn(intervention, day.atYear(year))) {
 				return true;
+			}
+
 		}
 
 		return false;

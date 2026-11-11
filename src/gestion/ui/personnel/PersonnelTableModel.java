@@ -1,6 +1,7 @@
 package gestion.ui.personnel;
 
 import java.util.List;
+
 import javax.swing.table.AbstractTableModel;
 
 import gestion.model.Employee;
@@ -27,12 +28,15 @@ public final class PersonnelTableModel extends AbstractTableModel {
 	public void setRows(List<EmployeeSummary> rows) {
 		List<List<Object>> values = rows.stream().map(row -> java.util.Arrays.<Object>asList(row.employee(),
 				row.employee().getFirstName(), row.employee().getLastName(), row.employee().getContractHours(),
-				row.status(), row.assignedHours(), row.remainingHours(), row.assignedAlert(), row.remainingAlert())).toList();
+				row.status(), row.assignedHours(), row.remainingHours(), row.assignedAlert(), row.remainingAlert()))
+				.toList();
 		this.rows = List.copyOf(rows);
+
 		if (!displayedValues.equals(values)) {
 			displayedValues = values;
 			fireTableDataChanged();
 		}
+
 	}
 
 	public EmployeeSummary rowAt(int row) {
@@ -61,7 +65,7 @@ public final class PersonnelTableModel extends AbstractTableModel {
 
 	@Override
 	public Object getValueAt(int row, int column) {
-		
+
 		EmployeeSummary values = rows.get(row);
 
 		return switch (column) {
@@ -78,8 +82,9 @@ public final class PersonnelTableModel extends AbstractTableModel {
 	@Override
 	public void setValueAt(Object value, int row, int column) {
 
-		if (!isCellEditable(row, column))
+		if (!isCellEditable(row, column)) {
 			return;
+		}
 
 		Employee employee = rows.get(row).employee();
 		String text = value == null ? "" : value.toString();

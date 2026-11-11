@@ -2,20 +2,21 @@ package gestion.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridLayout;
 import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
-import java.awt.GridLayout;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import javax.imageio.ImageIO;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+
+import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -84,8 +85,10 @@ public final class HomePanel extends JPanel implements AppThemeAware {
 						interventions),
 				card("Archives", "Historique des interventions", NavigationIcon.Kind.ARCHIVE, 0x91A0B6, null) };
 
-		for (HomeCardButton button : destinations)
+		for (HomeCardButton button : destinations) {
 			cards.add(button);
+		}
+
 		add(introduction, BorderLayout.NORTH);
 		add(cards, BorderLayout.CENTER);
 		applyAppTheme(UIUtils.isDarkMode());
@@ -95,14 +98,17 @@ public final class HomePanel extends JPanel implements AppThemeAware {
 			Runnable action) {
 		HomeCardButton button = new HomeCardButton(title, subtitle, icon, new Color(color), action != null);
 
-		if (action != null)
+		if (action != null) {
 			button.addActionListener(event -> action.run());
+		}
+
 		return button;
 	}
 
 	@Override
 	public void doLayout() {
 		double scale = Math.max(1, Math.min(getWidth() / 1366d, getHeight() / 680d));
+
 		if (Math.abs(contentScale - scale) >= .001) {
 			contentScale = scale;
 			title.setFont(title.getFont().deriveFont((float) (24 * contentScale)));
@@ -115,19 +121,27 @@ public final class HomePanel extends JPanel implements AppThemeAware {
 			((BorderLayout) heading.getLayout()).setVgap(scaled(7));
 			((BorderLayout) dateCard.getLayout()).setHgap(scaled(12));
 			dateCard.setBorder(BorderFactory.createEmptyBorder(scaled(10), scaled(12), scaled(10), scaled(14)));
-			for (HomeCardButton button : destinations)
+
+			for (HomeCardButton button : destinations) {
 				button.setContentScale(contentScale);
+			}
+
 		}
+
 		boolean shortWindow = getHeight() > 0 && getHeight() < 580;
 		java.awt.Insets padding = shortWindow ? new java.awt.Insets(16, 24, 16, 24)
 				: new java.awt.Insets(scaled(28), scaled(32), scaled(30), scaled(32));
-		if (!getInsets().equals(padding))
+
+		if (!getInsets().equals(padding)) {
 			setBorder(BorderFactory.createEmptyBorder(padding.top, padding.left, padding.bottom, padding.right));
+		}
+
 		((BorderLayout) getLayout()).setVgap(shortWindow ? 16 : scaled(26));
 		((GridLayout) cards.getLayout()).setVgap(shortWindow ? 12 : scaled(16));
 		((GridLayout) cards.getLayout()).setHgap(scaled(16));
 		super.doLayout();
-		// Bound extreme aspect ratios without stretching cards independently of their content.
+		// Bound extreme aspect ratios without stretching cards independently of their
+		// content.
 		cards.setSize(cards.getWidth(), Math.max(0, Math.min(cards.getHeight(),
 				3 * scaled(176) + 2 * ((GridLayout) cards.getLayout()).getVgap())));
 	}
@@ -148,16 +162,20 @@ public final class HomePanel extends JPanel implements AppThemeAware {
 		calendar.setIcon(new NavigationIcon(NavigationIcon.Kind.CALENDAR, scaled(24), new Color(105, 236, 243)));
 		introduction.repaint();
 
-		for (HomeCardButton button : destinations)
+		for (HomeCardButton button : destinations) {
 			button.applyAppTheme(dark);
+		}
+
 	}
 
 	private static BufferedImage loadBannerBackground() {
+
 		try (var stream = HomePanel.class.getResourceAsStream("/icons/home-banner-background.png")) {
 			return stream == null ? null : ImageIO.read(stream);
 		} catch (IOException failure) {
 			return null;
 		}
+
 	}
 
 	private static Color transparent(Color color, int alpha) {
@@ -203,6 +221,7 @@ public final class HomePanel extends JPanel implements AppThemeAware {
 			g.clip(shape);
 			g.setColor(new Color(5, 23, 43));
 			g.fill(shape);
+
 			if (BANNER_BACKGROUND != null) {
 				int sourceWidth = BANNER_BACKGROUND.getWidth();
 				int sourceHeight = BANNER_BACKGROUND.getHeight();
@@ -212,9 +231,12 @@ public final class HomePanel extends JPanel implements AppThemeAware {
 				int right = Math.min(getWidth(), left + Math.round((sourceRight - sourceLeft)
 						* getHeight() / (float) sourceHeight * 1.4f));
 				g.drawImage(BANNER_BACKGROUND, 0, 0, left, getHeight(), 0, 0, sourceLeft, sourceHeight, this);
-				g.drawImage(BANNER_BACKGROUND, left, 0, right, getHeight(), sourceLeft, 0, sourceRight, sourceHeight, this);
-				g.drawImage(BANNER_BACKGROUND, right, 0, getWidth(), getHeight(), sourceRight, 0, sourceWidth, sourceHeight, this);
+				g.drawImage(BANNER_BACKGROUND, left, 0, right, getHeight(), sourceLeft, 0, sourceRight, sourceHeight,
+						this);
+				g.drawImage(BANNER_BACKGROUND, right, 0, getWidth(), getHeight(), sourceRight, 0, sourceWidth,
+						sourceHeight, this);
 			}
+
 			g.setColor(new Color(23, 30, 42, 65));
 			g.fill(shape);
 			g.setColor(new Color(0, 217, 237));

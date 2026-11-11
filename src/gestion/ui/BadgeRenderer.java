@@ -5,8 +5,9 @@ import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import javax.swing.JTable;
+
 import javax.swing.JLabel;
+import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public class BadgeRenderer extends DefaultTableCellRenderer {
@@ -20,7 +21,8 @@ public class BadgeRenderer extends DefaultTableCellRenderer {
 	protected Color colorFor(Object value) {
 		String text = String.valueOf(value);
 		return text.equals("Récurrent") || text.equals("Attribué") || text.equals("Opérationnel")
-				? UIUtils.getTurquoiseColor() : UIUtils.getVioletColor();
+				? UIUtils.getTurquoiseColor()
+				: UIUtils.getVioletColor();
 	}
 
 	@Override
@@ -42,12 +44,14 @@ public class BadgeRenderer extends DefaultTableCellRenderer {
 	@Override
 	protected void paintComponent(Graphics graphics) {
 		Graphics2D g = (Graphics2D) graphics.create();
+
 		try {
 			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			// The label stays transparent so its background cannot cover the badge.
 			// Paint the renderer's row color, including striping and selection, first.
 			g.setColor(getBackground());
 			g.fillRect(0, 0, getWidth(), getHeight());
+
 			if (accent != null) {
 				int width = Math.min(Math.max(0, getWidth() - 12), 260);
 				int x = (getWidth() - width) / 2;
@@ -56,9 +60,11 @@ public class BadgeRenderer extends DefaultTableCellRenderer {
 				g.setColor(new Color(accent.getRed(), accent.getGreen(), accent.getBlue(), 135));
 				g.drawRoundRect(x, 3, Math.max(0, width - 1), Math.max(0, getHeight() - 7), 12, 12);
 			}
+
 		} finally {
 			g.dispose();
 		}
+
 		super.paintComponent(graphics);
 	}
 }

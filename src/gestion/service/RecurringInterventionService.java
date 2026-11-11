@@ -1,15 +1,15 @@
 package gestion.service;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import gestion.repository.CsvStore;
-import gestion.util.DomainValidation;
 
 import gestion.model.Employee;
 import gestion.model.RecurringIntervention;
+import gestion.repository.CsvStore;
 import gestion.repository.RecurringInterventionCsvRepository;
+import gestion.util.DomainValidation;
 
 public class RecurringInterventionService {
 
@@ -27,14 +27,18 @@ public class RecurringInterventionService {
 		ArrayList<RecurringIntervention> previous = new ArrayList<>(recurringInterventions);
 		ArrayList<Employee> employees = new ArrayList<>();
 
-		for (RecurringIntervention recurring : previous)
+		for (RecurringIntervention recurring : previous) {
 			employees.add(recurring.getEmployee());
+		}
+
 		return () -> {
 			recurringInterventions.clear();
 			recurringInterventions.addAll(previous);
 
-			for (int i = 0; i < previous.size(); i++)
+			for (int i = 0; i < previous.size(); i++) {
 				previous.get(i).setEmployee(employees.get(i));
+			}
+
 		};
 	}
 
@@ -50,8 +54,11 @@ public class RecurringInterventionService {
 	}
 
 	private void sameDirectory(PlanningService planning) {
-		if (!getDirectory().equals(planning.getDirectory()))
+
+		if (!getDirectory().equals(planning.getDirectory())) {
 			throw new IllegalArgumentException("Dossiers de données différents.");
+		}
+
 	}
 
 	public boolean createWithPlanning(PlanningService planning, RecurringIntervention recurring) {
@@ -60,8 +67,10 @@ public class RecurringInterventionService {
 		CsvStore.transaction(getDirectory(), () -> {
 			generated[0] = planning.generateRecurringInterventions(recurring);
 
-			if (generated[0])
+			if (generated[0]) {
 				addRecurringIntervention(recurring);
+			}
+
 		});
 
 		return generated[0];
@@ -73,8 +82,10 @@ public class RecurringInterventionService {
 		List<gestion.model.Intervention> targets = planning.getFutureInterventionsByRecurringId(id,
 				LocalDateTime.now());
 
-		if (targets.isEmpty())
+		if (targets.isEmpty()) {
 			throw new IllegalArgumentException("Aucune occurrence future à attribuer ; l'historique est conservé.");
+		}
+
 		CsvStore.transaction(getDirectory(), () -> {
 			planning.assignEmployee(targets, employee);
 			assignEmployeeByRecurringId(id, employee);
@@ -86,14 +97,17 @@ public class RecurringInterventionService {
 		findRequired(id);
 		LocalDateTime now = LocalDateTime.now();
 
-		if (planning.getFutureInterventionsByRecurringId(id, now).isEmpty())
+		if (planning.getFutureInterventionsByRecurringId(id, now).isEmpty()) {
 			throw new IllegalArgumentException("Aucune occurrence future à supprimer ; l'historique est conservé.");
+		}
 
 		CsvStore.transaction(getDirectory(), () -> {
 			planning.removeFutureInterventionsByRecurringId(id, now);
 
-			if (planning.getInterventionsByRecurringId(id).isEmpty())
+			if (planning.getInterventionsByRecurringId(id).isEmpty()) {
 				removeRecurringInterventionById(id);
+			}
+
 		});
 	}
 
@@ -116,8 +130,10 @@ public class RecurringInterventionService {
 	public void assignEmployeeByRecurringId(String recurringId, Employee employee) {
 		RecurringIntervention recurring = findRequired(recurringId);
 
-		if (employee != null)
+		if (employee != null) {
 			personnel.requireKnown(employee);
+		}
+
 		change(() -> recurring.setEmployee(employee));
 	}
 
@@ -130,19 +146,23 @@ public class RecurringInterventionService {
 		DomainValidation.recurring(recurring);
 		clients.requireKnown(recurring.getClient());
 
-		if (recurring.getEmployee() != null)
+		if (recurring.getEmployee() != null) {
 			personnel.requireKnown(recurring.getEmployee());
+		}
 
-		if (recurringInterventions.stream().anyMatch(r -> r.getId().equals(recurring.getId())))
+		if (recurringInterventions.stream().anyMatch(r -> r.getId().equals(recurring.getId()))) {
 			throw new IllegalArgumentException("Identifiant de série déjà présent.");
+		}
 
 		change(() -> recurringInterventions.add(recurring));
 	}
 
 	public void removeRecurringIntervention(int index) {
 
-		if (index < 0 || index >= recurringInterventions.size())
+		if (index < 0 || index >= recurringInterventions.size()) {
 			throw new IllegalArgumentException("Sélectionnez une série.");
+		}
+
 		removeRecurringInterventionById(recurringInterventions.get(index).getId());
 	}
 

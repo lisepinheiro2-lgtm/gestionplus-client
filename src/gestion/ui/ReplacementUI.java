@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -28,7 +29,6 @@ import gestion.model.Replacement;
 import gestion.service.PersonnelService;
 import gestion.service.PlanningService;
 import gestion.service.ReplacementService;
-import gestion.ui.ActionDialogs;
 import gestion.util.FormatUtils;
 
 public class ReplacementUI extends JPanel {
@@ -81,8 +81,11 @@ public class ReplacementUI extends JPanel {
 			public java.awt.Component getListCellRendererComponent(javax.swing.JList<?> list, Object value,
 					int index, boolean selected, boolean focused) {
 				super.getListCellRendererComponent(list, value, index, selected, focused);
-				if (value == null)
+
+				if (value == null) {
 					setText("Aucun remplaçant désigné");
+				}
+
 				return this;
 			}
 		});
@@ -94,10 +97,12 @@ public class ReplacementUI extends JPanel {
 		UIUtils.addPlaceholder(startTimeField, "__ h __");
 		UIUtils.addPlaceholder(endDateField, "jj/MM/aaaa");
 		UIUtils.addPlaceholder(endTimeField, "__ h __");
+
 		for (Employee employee : personnel.getEmployees()) {
 			employeeToReplaceBox.addItem(employee);
 			replacementEmployeeBox.addItem(employee);
 		}
+
 		fields.add(fieldBlock("Employé à remplacer", employeeToReplaceBox));
 		fields.add(fieldBlock("Employé remplaçant (facultatif)", replacementEmployeeBox));
 		fields.add(fieldBlock("Date de début", startDateField));
@@ -107,21 +112,27 @@ public class ReplacementUI extends JPanel {
 		inputPanel.add(fields, BorderLayout.NORTH);
 		assignAllCheckBox = new JCheckBox("Attribuer toutes les interventions au remplaçant");
 		assignAllCheckBox.setEnabled(false);
-		replacementEmployeeBox.setToolTipText("Pour appliquer ce remplaçant lors de l'ajout, cochez l'attribution de toutes les interventions.");
+		replacementEmployeeBox.setToolTipText(
+				"Pour appliquer ce remplaçant lors de l'ajout, cochez l'attribution de toutes les interventions.");
 		replacementEmployeeBox.addActionListener(event -> {
 			boolean available = replacementEmployeeBox.getSelectedItem() != null;
 			assignAllCheckBox.setEnabled(available);
-			if (!available)
+
+			if (!available) {
 				assignAllCheckBox.setSelected(false);
+			}
+
 		});
 		inputPanel.add(assignAllCheckBox, BorderLayout.CENTER);
 		JPanel actions = new JPanel(new GridLayout(1, 3, 10, 0));
 		JButton addButton = new ReplacementActionButton("Ajouter un remplacement", "primary");
 		JButton removeButton = new ReplacementActionButton("Supprimer le remplacement", "danger");
 		JButton assignGroup = new ReplacementActionButton("Attribuer les non attribuées", "primary");
-		assignGroup.getAccessibleContext().setAccessibleName("Attribuer les interventions non attribuées de la demande");
+		assignGroup.getAccessibleContext()
+				.setAccessibleName("Attribuer les interventions non attribuées de la demande");
 		assignGroup.putClientProperty("gestion.icon", NavigationIcon.Kind.REPLACEMENTS);
-		assignGroup.setToolTipText("Attribuer les interventions non attribuées de la demande liée à une absence : uniquement les interventions futures encore libres.");
+		assignGroup.setToolTipText(
+				"Attribuer les interventions non attribuées de la demande liée à une absence : uniquement les interventions futures encore libres.");
 		((ReplacementActionButton) assignGroup).applyAppTheme(UIUtils.isDarkMode());
 		actions.add(removeButton);
 		actions.add(addButton);
@@ -231,12 +242,14 @@ public class ReplacementUI extends JPanel {
 		try {
 			personnel.requireKnown(employeeToReplace);
 
-			if (assignAllCheckBox.isSelected())
+			if (assignAllCheckBox.isSelected()) {
 				personnel.requireKnown(replacementEmployee);
+			}
 
 			if (start.isBefore(LocalDateTime.now()) && !ActionDialogs.confirm(this,
-					"Cette demande commence dans le passé et peut modifier des attributions passées. Voulez-vous continuer ?"))
+					"Cette demande commence dans le passé et peut modifier des attributions passées. Voulez-vous continuer ?")) {
 				return;
+			}
 
 			replacementList.createWithPlanning(planning, employeeToReplace, replacementEmployee, startDate, startTime,
 					endDate, endTime);
@@ -264,15 +277,20 @@ public class ReplacementUI extends JPanel {
 		}
 
 		try {
+
 			if (replacementList.getReplacements().get(index).getAbsenceId() == null
-					&& !ActionDialogs.confirm(this, "Supprimer cette demande de remplacement ? Cette action ne rétablit pas les anciennes attributions."))
+					&& !ActionDialogs.confirm(this,
+							"Supprimer cette demande de remplacement ? Cette action ne rétablit pas les anciennes attributions.")) {
 				return;
+			}
+
 			replacementList.removeReplacement(index);
 			refreshTable();
 
 		} catch (UncheckedIOException | IllegalArgumentException e) {
 			ActionDialogs.error(this, e);
 		}
+
 	}
 
 	private void createTable() {
@@ -289,8 +307,11 @@ public class ReplacementUI extends JPanel {
 			@Override
 			public String getToolTipText(java.awt.event.MouseEvent event) {
 				int row = rowAtPoint(event.getPoint());
-				if (row < 0)
+
+				if (row < 0) {
 					return null;
+				}
+
 				return replacementTooltips.get(convertRowIndexToModel(row));
 			}
 		};
@@ -302,14 +323,17 @@ public class ReplacementUI extends JPanel {
 			protected java.awt.Color colorFor(Object value) {
 				return "Suivi individuel".equals(value) || "Sans occurrence future".equals(value)
 						? UIUtils.getPlaceholderColor()
-						: String.valueOf(value).startsWith("Attribué") ? UIUtils.getTurquoiseColor() : UIUtils.getVioletColor();
+						: String.valueOf(value).startsWith("Attribué") ? UIUtils.getTurquoiseColor()
+								: UIUtils.getVioletColor();
 			}
 		});
 		int[] widths = { 195, 190, 200, 180, 170, 170 };
+
 		for (int column = 0; column < widths.length; column++) {
 			replacementTable.getColumnModel().getColumn(column).setPreferredWidth(widths[column]);
 			replacementTable.getColumnModel().getColumn(column).setMinWidth(widths[column] - 15);
 		}
+
 		replacementTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		JScrollPane scrollPane = new JScrollPane(replacementTable);
 		UIUtils.configureTableViewport(replacementTable, scrollPane);
@@ -326,36 +350,51 @@ public class ReplacementUI extends JPanel {
 		displayedReplacements.clear();
 		replacementTooltips.clear();
 		java.util.Map<String, List<Intervention>> groups = new java.util.HashMap<>();
-		for (Intervention intervention : planning.getInterventions())
-			if (intervention.getSourceAbsenceId() != null)
-				groups.computeIfAbsent(intervention.getSourceAbsenceId(), ignored -> new ArrayList<>()).add(intervention);
+
+		for (Intervention intervention : planning.getInterventions()) {
+
+			if (intervention.getSourceAbsenceId() != null) {
+				groups.computeIfAbsent(intervention.getSourceAbsenceId(), ignored -> new ArrayList<>())
+						.add(intervention);
+			}
+
+		}
+
 		List<Replacement> allReplacements = replacementList.getReplacements();
 		LocalDateTime now = LocalDateTime.now();
+
 		for (int i = 0; i < allReplacements.size(); i++) {
 			Replacement replacement = allReplacements.get(i);
 			boolean linkedToAbsence = replacement.getAbsenceId() != null;
 			List<Intervention> group = linkedToAbsence
-					? groups.getOrDefault(replacement.getAbsenceId(), List.of()) : List.of();
-			if (linkedToAbsence && group.isEmpty())
+					? groups.getOrDefault(replacement.getAbsenceId(), List.of())
+					: List.of();
+
+			if (linkedToAbsence && group.isEmpty()) {
 				continue;
+			}
+
 			String status = "Suivi individuel";
 			String count = "—";
 			String hours = "—";
 
 			if (linkedToAbsence) {
-				List<Intervention> future = group.stream().filter(intervention ->
-						!LocalDateTime.of(intervention.getStartDate(), intervention.getStartTime()).isBefore(now)).toList();
-				List<Intervention> remaining = future.stream().filter(intervention -> intervention.getEmployee() == null).toList();
+				List<Intervention> future = group.stream().filter(intervention -> !LocalDateTime
+						.of(intervention.getStartDate(), intervention.getStartTime()).isBefore(now)).toList();
+				List<Intervention> remaining = future.stream()
+						.filter(intervention -> intervention.getEmployee() == null).toList();
 				long assigned = future.size() - remaining.size();
 				status = future.isEmpty() ? "Sans occurrence future"
 						: remaining.isEmpty() ? "Attribué (futur)"
-						: assigned > 0 ? "Partiellement attribué" : "Non attribué";
+								: assigned > 0 ? "Partiellement attribué" : "Non attribué";
 				count = remaining.size() + " / " + group.size();
 				double totalHours = group.stream().mapToDouble(Intervention::getDurationHours).sum();
 				double remainingHours = remaining.stream().mapToDouble(Intervention::getDurationHours).sum();
-				hours = FormatUtils.formatContractHours(totalHours) + " / " + FormatUtils.formatContractHours(remainingHours);
+				hours = FormatUtils.formatContractHours(totalHours) + " / "
+						+ FormatUtils.formatContractHours(remainingHours);
 
 			}
+
 			rows.add(new Object[] { replacement.getEmployeeToReplace().toString(), status, count, hours,
 					formatBoundary(replacement, false), formatBoundary(replacement, true) });
 			displayedReplacementIndexes.add(i);
@@ -373,25 +412,36 @@ public class ReplacementUI extends JPanel {
 		}
 
 		boolean changed = UIUtils.updateTableRows(tableModel, rows);
+
 		if (!changed && !previousRows.equals(displayedReplacements)) {
 			tableModel.fireTableDataChanged();
 			changed = true;
 		}
+
 		if (changed && selected != null) {
 			int index = displayedReplacements.indexOf(selected);
+
 			if (index >= 0) {
 				int row = replacementTable.convertRowIndexToView(index);
-				if (row >= 0)
+
+				if (row >= 0) {
 					replacementTable.setRowSelectionInterval(row, row);
+				}
+
 			}
+
 		}
+
 	}
 
 	private String formatBoundary(Replacement replacement, boolean end) {
 		LocalDate date = FormatUtils.parseDate(end ? replacement.getEndDate() : replacement.getStartDate());
 		LocalTime time = FormatUtils.parseTime(end ? replacement.getEndTime() : replacement.getStartTime());
-		if (end && replacement.getAbsenceId() != null && time.equals(LocalTime.MIDNIGHT))
+
+		if (end && replacement.getAbsenceId() != null && time.equals(LocalTime.MIDNIGHT)) {
 			return FormatUtils.formatDate(date.minusDays(1)) + " 24h00";
+		}
+
 		return FormatUtils.formatDate(date) + " " + FormatUtils.formatTime(time);
 	}
 
@@ -399,9 +449,12 @@ public class ReplacementUI extends JPanel {
 		List<Employee> employees = personnel.getEmployees();
 		boolean same = employeeToReplaceBox.getItemCount() == employees.size()
 				&& replacementEmployeeBox.getItemCount() == employees.size() + 1;
-		for (int index = 0; same && index < employees.size(); index++)
+
+		for (int index = 0; same && index < employees.size(); index++) {
 			same = employeeToReplaceBox.getItemAt(index) == employees.get(index)
 					&& replacementEmployeeBox.getItemAt(index + 1) == employees.get(index);
+		}
+
 		if (same) {
 			employeeToReplaceBox.repaint();
 			replacementEmployeeBox.repaint();
@@ -417,10 +470,14 @@ public class ReplacementUI extends JPanel {
 		substitutes.addAll(employees);
 		replacementEmployeeBox.setModel(new javax.swing.DefaultComboBoxModel<>(substitutes.toArray(Employee[]::new)));
 
-		if (personnel.getEmployees().contains(original))
+		if (personnel.getEmployees().contains(original)) {
 			employeeToReplaceBox.setSelectedItem(original);
-		if (personnel.getEmployees().contains(substitute))
+		}
+
+		if (personnel.getEmployees().contains(substitute)) {
 			replacementEmployeeBox.setSelectedItem(substitute);
+		}
+
 		assignAllCheckBox.setSelected(assignAll && replacementEmployeeBox.getSelectedItem() != null);
 	}
 
@@ -444,6 +501,7 @@ public class ReplacementUI extends JPanel {
 		} catch (UncheckedIOException | IllegalArgumentException e) {
 			ActionDialogs.error(this, e);
 		}
+
 	}
 
 	private int getSelectedReplacementIndex() {

@@ -32,22 +32,27 @@ final class SelectAllTableHeader extends JCheckBox implements TableCellRenderer 
 		getAccessibleContext().setAccessibleName("Tout sélectionner ou désélectionner dans la colonne " + getText());
 		table.getColumnModel().getColumn(table.convertColumnIndexToView(modelColumn)).setHeaderRenderer(this);
 
-		if (table.getRowSorter() instanceof TableRowSorter<?> sorter)
+		if (table.getRowSorter() instanceof TableRowSorter<?> sorter) {
 			sorter.setSortable(modelColumn, false);
+		}
 
 		table.getTableHeader().addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent event) {
-				if (!SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 1 || !isEnabled())
+
+				if (!SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 1 || !isEnabled()) {
 					return;
+				}
 
 				int viewColumn = table.getTableHeader().columnAtPoint(event.getPoint());
 
-				if (viewColumn < 0 || table.convertColumnIndexToModel(viewColumn) != modelColumn)
+				if (viewColumn < 0 || table.convertColumnIndexToModel(viewColumn) != modelColumn) {
 					return;
+				}
 
-				if (table.isEditing() && !table.getCellEditor().stopCellEditing())
+				if (table.isEditing() && !table.getCellEditor().stopCellEditing()) {
 					return;
+				}
 
 				onToggle.run();
 			}
@@ -67,6 +72,7 @@ final class SelectAllTableHeader extends JCheckBox implements TableCellRenderer 
 	@Override
 	public Component getTableCellRendererComponent(JTable source, Object value, boolean selected, boolean focused,
 			int row, int column) {
+
 		if (dark != UIUtils.isDarkMode()) {
 			dark = UIUtils.isDarkMode();
 			updateUI();
@@ -78,8 +84,9 @@ final class SelectAllTableHeader extends JCheckBox implements TableCellRenderer 
 		setForeground(header.getForeground());
 		setBackground(header.getBackground());
 
-		if (header instanceof JComponent component)
+		if (header instanceof JComponent component) {
 			setBorder(component.getBorder());
+		}
 
 		return this;
 	}
@@ -95,5 +102,6 @@ final class SelectAllTableHeader extends JCheckBox implements TableCellRenderer 
 		} finally {
 			line.dispose();
 		}
+
 	}
 }

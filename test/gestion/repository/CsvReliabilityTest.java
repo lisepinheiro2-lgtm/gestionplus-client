@@ -1,14 +1,36 @@
 package gestion.repository;
 
-import static org.junit.jupiter.api.Assertions.*;
-import java.io.*;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.*;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import gestion.model.*;
+
+import gestion.model.EmployeeAbsence;
+import gestion.model.EmployeeStatus;
+import gestion.model.Intervention;
+import gestion.model.RecurringIntervention;
 import gestionTest.support.TestFixture;
 
 class CsvReliabilityTest {
@@ -51,6 +73,7 @@ class CsvReliabilityTest {
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
 			}
+
 		});
 
 		for (var entry : writers.entrySet()) {
@@ -67,7 +90,9 @@ class CsvReliabilityTest {
 			try (var files = Files.list(directory)) {
 				assertTrue(files.noneMatch(p -> p.toString().endsWith(".tmp")));
 			}
+
 		}
+
 	}
 
 	@Test
@@ -99,6 +124,7 @@ class CsvReliabilityTest {
 			assertArrayEquals(corrupted, Files.readAllBytes(path));
 			Files.write(path, original);
 		}
+
 	}
 
 	@Test
@@ -125,6 +151,7 @@ class CsvReliabilityTest {
 			assertThrows(IOException.class, () -> new AbsenceCsvRepository(directory).load(f.personnel.getEmployees()));
 			assertEquals(base + second, Files.readString(path));
 		}
+
 	}
 
 	@Test
@@ -184,8 +211,11 @@ class CsvReliabilityTest {
 	void secondFileFailureCompensatesSeriesCreationAndAssignmentsAndDeletion() throws Exception {
 		var before = f.files();
 		CsvStore.installHook = count -> {
-			if (count == 1)
+
+			if (count == 1) {
 				throw new IOException("Deuxième installation refusée");
+			}
+
 		};
 		assertThrows(UncheckedIOException.class,
 				() -> f.recurring.createWithPlanning(f.planning, f.series(null, f.future, f.future.plusWeeks(1))));
@@ -199,8 +229,11 @@ class CsvReliabilityTest {
 		var occurrences = new ArrayList<>(f.planning.getInterventions());
 		before = f.files();
 		CsvStore.installHook = count -> {
-			if (count == 1)
+
+			if (count == 1) {
 				throw new IOException("Deuxième installation refusée");
+			}
+
 		};
 		assertThrows(UncheckedIOException.class, () -> f.recurring.assignFutureSeries(f.planning, series.getId(), f.b));
 		occurrences.forEach(i -> assertNull(i.getEmployee()));
@@ -218,8 +251,11 @@ class CsvReliabilityTest {
 		Intervention i = f.add(f.a, f.future, 8, 10);
 		var before = f.files();
 		CsvStore.installHook = count -> {
-			if (count == 1)
+
+			if (count == 1) {
 				throw new IOException("panne fictive");
+			}
+
 		};
 		assertThrows(UncheckedIOException.class,
 				() -> f.replacements.createWithPlanning(f.planning, f.a, f.b,
@@ -232,8 +268,11 @@ class CsvReliabilityTest {
 		for (int failAt = 1; failAt <= 3; failAt++) {
 			int index = failAt;
 			CsvStore.installHook = count -> {
-				if (count == index)
+
+				if (count == index) {
 					throw new IOException("panne fictive");
+				}
+
 			};
 			assertThrows(IOException.class,
 					() -> f.absences.addAbsence(new EmployeeAbsence(f.a, EmployeeStatus.VACATION, f.future, f.future)));
@@ -309,8 +348,11 @@ class CsvReliabilityTest {
 			throw new IOException("installation refusée");
 		};
 		CsvStore.writeHook = path -> {
-			if (restoring[0])
+
+			if (restoring[0]) {
 				throw new IOException("restauration refusée");
+			}
+
 		};
 		assertThrows(UncheckedIOException.class, () -> CsvStore.transaction(directory, () -> {
 			new ClientCsvRepository(directory).save(clients);

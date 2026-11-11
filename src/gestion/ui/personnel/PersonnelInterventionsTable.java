@@ -73,12 +73,19 @@ final class PersonnelInterventionsTable extends JTable {
 
 			@Override
 			public Class<?> getColumnClass(int column) {
-				if (column == 0)
+
+				if (column == 0) {
 					return Boolean.class;
-				if (column == dateColumn)
+				}
+
+				if (column == dateColumn) {
 					return LocalDateTime.class;
-				if (column == dateColumn + 2)
+				}
+
+				if (column == dateColumn + 2) {
 					return Double.class;
+				}
+
 				return String.class;
 			}
 
@@ -86,19 +93,31 @@ final class PersonnelInterventionsTable extends JTable {
 			public Object getValueAt(int row, int column) {
 				Intervention intervention = interventions.get(row);
 
-				if (column == 0)
+				if (column == 0) {
 					return isRowSelected(convertRowIndexToView(row));
-				if (column == 1)
+				}
+
+				if (column == 1) {
 					return intervention.getRecurringId() == null ? "" : "Récurrent";
-				if (column == 2)
+				}
+
+				if (column == 2) {
 					return intervention.getClient().getFirstName() + " " + intervention.getClient().getLastName();
-				if (showEmployee && column == 3)
+				}
+
+				if (showEmployee && column == 3) {
 					return intervention.getEmployee() == null ? "" : intervention.getEmployee().toString();
-				if (column == dateColumn)
+				}
+
+				if (column == dateColumn) {
 					return LocalDateTime.of(intervention.getStartDate(), intervention.getStartTime());
-				if (column == dateColumn + 1)
+				}
+
+				if (column == dateColumn + 1) {
 					return FormatUtils.formatTime(intervention.getStartTime()) + " – "
 							+ FormatUtils.formatTime(intervention.getEndTime());
+				}
+
 				return intervention.getDurationHours();
 			}
 		});
@@ -110,7 +129,8 @@ final class PersonnelInterventionsTable extends JTable {
 				super.getTableCellRendererComponent(table, "", selected, focused, row, column);
 				setHorizontalAlignment(CENTER);
 				setBackground(table.getTableHeader().getBackground());
-				setIcon(new gestion.ui.NavigationIcon(gestion.ui.NavigationIcon.Kind.CHECK, 16, UIUtils.getTextColor()));
+				setIcon(new gestion.ui.NavigationIcon(gestion.ui.NavigationIcon.Kind.CHECK, 16,
+						UIUtils.getTextColor()));
 				setToolTipText("Sélection des interventions");
 				return this;
 			}
@@ -122,7 +142,8 @@ final class PersonnelInterventionsTable extends JTable {
 				super.getTableCellRendererComponent(table, "", selected, focused, row, column);
 				setHorizontalAlignment(CENTER);
 				setIcon(value == null || value.toString().isEmpty() ? null
-						: new gestion.ui.NavigationIcon(gestion.ui.NavigationIcon.Kind.RECURRING, 16, UIUtils.getTurquoiseColor()));
+						: new gestion.ui.NavigationIcon(gestion.ui.NavigationIcon.Kind.RECURRING, 16,
+								UIUtils.getTurquoiseColor()));
 				return this;
 			}
 		});
@@ -133,8 +154,9 @@ final class PersonnelInterventionsTable extends JTable {
 		sorter.setSortKeys(List.of(new RowSorter.SortKey(dateColumn, SortOrder.ASCENDING)));
 		setRowSorter(sorter);
 
-		if (preventOverlaps)
+		if (preventOverlaps) {
 			setSelectionModel(new CompatibleSelectionModel());
+		}
 
 		setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		setRowHeight(28);
@@ -143,31 +165,40 @@ final class PersonnelInterventionsTable extends JTable {
 		getTableHeader().setReorderingAllowed(false);
 		getTableHeader().setResizingAllowed(false);
 		getSelectionModel().addListSelectionListener(event -> {
-			if (!event.getValueIsAdjusting())
+
+			if (!event.getValueIsAdjusting()) {
 				updateBlockedRows();
+			}
+
 		});
 
 		for (int column = 0; column < getColumnCount(); column++) {
+
 			if (column < 2) {
 				getColumnModel().getColumn(column).setMinWidth(32);
 				getColumnModel().getColumn(column).setMaxWidth(38);
 			} else {
 				getColumnModel().getColumn(column).setPreferredWidth(column == dateColumn ? 200 : 140);
 			}
+
 		}
+
 	}
 
 	@Override
 	public void changeSelection(int row, int column, boolean toggle, boolean extend) {
-		if (row < 0 || row >= getRowCount())
+
+		if (row < 0 || row >= getRowCount()) {
 			return;
+		}
 
 		Intervention requested = interventions.get(convertRowIndexToModel(row));
 		hideStartedInterventions();
 		int modelRow = interventions.indexOf(requested);
 
-		if (modelRow < 0)
+		if (modelRow < 0) {
 			return;
+		}
 
 		int viewRow = convertRowIndexToView(modelRow);
 		List<Intervention> selected = selectedInterventions();
@@ -175,22 +206,28 @@ final class PersonnelInterventionsTable extends JTable {
 		if (selectionBlocker(requested, selected) != null && EventQueue.getCurrentEvent() instanceof KeyEvent) {
 			int direction = Integer.compare(viewRow, getSelectionModel().getLeadSelectionIndex());
 
-			if (direction == 0)
+			if (direction == 0) {
 				return;
+			}
 
 			do {
 				viewRow += direction;
 
-				if (viewRow < 0 || viewRow >= getRowCount())
+				if (viewRow < 0 || viewRow >= getRowCount()) {
 					return;
+				}
 
 				requested = interventions.get(convertRowIndexToModel(viewRow));
-			} while (selectionBlocker(requested, selected) != null);
+			}
+			while (selectionBlocker(requested, selected) != null);
+
 		}
 
 		if (InterventionAssignmentService.isModifiable(requested, LocalDateTime.now())
-				&& selectionBlocker(requested, selected) == null)
+				&& selectionBlocker(requested, selected) == null) {
 			super.changeSelection(viewRow, column, column == 0 || toggle, extend);
+		}
+
 	}
 
 	@Override
@@ -209,22 +246,25 @@ final class PersonnelInterventionsTable extends JTable {
 				: isRowSelected(row) ? getSelectionForeground() : getForeground());
 		component.setBackground(blocker != null ? new Color(UIUtils.isDarkMode() ? 0x26303D : 0xE8EDF3)
 				: isRowSelected(row) ? getSelectionBackground()
-				: row % 2 == 0 ? getBackground() : new Color(UIUtils.isDarkMode() ? 0x1D2735 : 0xEDF3FA));
+						: row % 2 == 0 ? getBackground() : new Color(UIUtils.isDarkMode() ? 0x1D2735 : 0xEDF3FA));
 
-		if (component instanceof JComponent target)
+		if (component instanceof JComponent target) {
 			target.setToolTipText(null);
+		}
 
 		if (component instanceof JLabel label) {
 			label.setHorizontalAlignment(JLabel.CENTER);
 			label.setToolTipText(null);
 
-			if (column == dateColumn)
+			if (column == dateColumn) {
 				label.setText(FormatUtils.formatDate(intervention.getStartDate())
 						+ (intervention.getStartDate().equals(intervention.getEndDate()) ? ""
 								: " – " + FormatUtils.formatDate(intervention.getEndDate())));
+			}
 
-			if (column == dateColumn + 2)
+			if (column == dateColumn + 2) {
 				label.setText(FormatUtils.formatContractHours(intervention.getDurationHours()));
+			}
 
 		}
 
@@ -235,22 +275,31 @@ final class PersonnelInterventionsTable extends JTable {
 	public String getToolTipText(java.awt.event.MouseEvent event) {
 		int row = rowAtPoint(event.getPoint());
 		int column = columnAtPoint(event.getPoint());
-		if (row < 0 || column < 0)
+
+		if (row < 0 || column < 0) {
 			return null;
+		}
+
 		Intervention intervention = interventions.get(convertRowIndexToModel(row));
 		Intervention blocker = blockers.get(intervention);
-		if (blocker != null)
+
+		if (blocker != null) {
 			return "Chevauche l'intervention sélectionnée : " + describe(blocker);
+		}
 
 		int modelColumn = convertColumnIndexToModel(column);
-		if (intervention.getRecurringId() == null || modelColumn != 1 && modelColumn != dateColumn + 2)
+
+		if (intervention.getRecurringId() == null || modelColumn != 1 && modelColumn != dateColumn + 2) {
 			return null;
+		}
+
 		LocalDate monday = intervention.getStartDate().with(DayOfWeek.MONDAY);
 		String key = intervention.getRecurringId() + ":" + monday;
 		return recurrenceTooltips.computeIfAbsent(key, ignored -> {
 			double weekly = planning.getInterventionsByRecurringId(intervention.getRecurringId()).stream()
 					.mapToDouble(i -> WorkHoursService.getInterventionHoursInPeriod(i, monday.atStartOfDay(),
-							monday.plusWeeks(1).atStartOfDay())).sum();
+							monday.plusWeeks(1).atStartOfDay()))
+					.sum();
 			return "Récurrence : " + FormatUtils.formatContractHours(weekly)
 					+ " dans la semaine du " + FormatUtils.formatDate(monday)
 					+ ". Durée affichée : cette occurrence uniquement.";
@@ -258,13 +307,18 @@ final class PersonnelInterventionsTable extends JTable {
 	}
 
 	private Intervention selectionBlocker(Intervention candidate, List<Intervention> selected) {
-		if (!preventOverlaps)
+
+		if (!preventOverlaps) {
 			return null;
+		}
 
 		for (Intervention other : selected) {
+
 			if (other != candidate && PeriodUtils.hasDateTimeOverlap(DomainValidation.intervention(candidate),
-					DomainValidation.intervention(other)))
+					DomainValidation.intervention(other))) {
 				return other;
+			}
+
 		}
 
 		return null;
@@ -277,8 +331,10 @@ final class PersonnelInterventionsTable extends JTable {
 		for (Intervention intervention : interventions) {
 			Intervention blocker = selectionBlocker(intervention, selected);
 
-			if (blocker != null)
+			if (blocker != null) {
 				blockers.put(intervention, blocker);
+			}
+
 		}
 
 		repaint();
@@ -298,13 +354,17 @@ final class PersonnelInterventionsTable extends JTable {
 		LocalDateTime now = LocalDateTime.now();
 
 		for (int row : getSelectedRows()) {
-			if (row < 0 || row >= getRowCount())
+
+			if (row < 0 || row >= getRowCount()) {
 				continue;
+			}
 
 			Intervention intervention = interventions.get(convertRowIndexToModel(row));
 
-			if (InterventionAssignmentService.isModifiable(intervention, now))
+			if (InterventionAssignmentService.isModifiable(intervention, now)) {
 				selected.add(intervention);
+			}
+
 		}
 
 		return selected;
@@ -312,7 +372,7 @@ final class PersonnelInterventionsTable extends JTable {
 
 	void showInterventions(List<Intervention> updated) {
 		recurrenceTooltips.clear();
-		
+
 		List<Intervention> selected = selectedInterventions();
 		clearSelection();
 		interventions.clear();
@@ -327,6 +387,7 @@ final class PersonnelInterventionsTable extends JTable {
 				int viewRow = convertRowIndexToView(modelRow);
 				addRowSelectionInterval(viewRow, viewRow);
 			}
+
 		}
 
 		updateBlockedRows();
@@ -335,8 +396,9 @@ final class PersonnelInterventionsTable extends JTable {
 	boolean hideStartedInterventions() {
 		LocalDateTime now = LocalDateTime.now();
 
-		if (interventions.stream().noneMatch(i -> !InterventionAssignmentService.isModifiable(i, now)))
+		if (interventions.stream().noneMatch(i -> !InterventionAssignmentService.isModifiable(i, now))) {
 			return false;
+		}
 
 		showInterventions(new ArrayList<>(interventions));
 		return true;
@@ -355,15 +417,17 @@ final class PersonnelInterventionsTable extends JTable {
 		}
 
 		private void selectCompatibleInterval(int first, int last, boolean replace) {
-			if (first < 0 || last < 0 || first >= getRowCount() || last >= getRowCount())
+
+			if (first < 0 || last < 0 || first >= getRowCount() || last >= getRowCount()) {
 				return;
+			}
 
 			List<Intervention> compatible = selectedInterventions();
 			List<Integer> accepted = new ArrayList<>();
 			LocalDateTime now = LocalDateTime.now();
 			int direction = first <= last ? 1 : -1;
 
-			for (int row = first; ; row += direction) {
+			for (int row = first;; row += direction) {
 				Intervention candidate = interventions.get(convertRowIndexToModel(row));
 
 				if (InterventionAssignmentService.isModifiable(candidate, now)
@@ -372,28 +436,35 @@ final class PersonnelInterventionsTable extends JTable {
 					compatible.add(candidate);
 				}
 
-				if (row == last)
+				if (row == last) {
 					break;
+				}
+
 			}
 
-			if (accepted.isEmpty())
+			if (accepted.isEmpty()) {
 				return;
+			}
 
 			boolean adjusting = getValueIsAdjusting();
 			setValueIsAdjusting(true);
 
 			try {
-				if (replace)
-					super.clearSelection();
 
-				for (int row : accepted)
+				if (replace) {
+					super.clearSelection();
+				}
+
+				for (int row : accepted) {
 					super.addSelectionInterval(row, row);
+				}
 
 				setAnchorSelectionIndex(first);
 				moveLeadSelectionIndex(accepted.getLast());
 			} finally {
 				setValueIsAdjusting(adjusting);
 			}
+
 		}
 	}
 }

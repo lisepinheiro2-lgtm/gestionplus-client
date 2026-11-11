@@ -1,10 +1,18 @@
 package gestion.repository;
 
 import java.nio.file.Path;
-import java.time.*;
-import java.util.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-import gestion.model.*;
+import gestion.model.Client;
+import gestion.model.Employee;
+import gestion.model.RecurringIntervention;
 import gestion.util.DomainValidation;
 
 public final class RecurringInterventionCsvRepository {
@@ -35,8 +43,10 @@ public final class RecurringInterventionCsvRepository {
 			recurring.setId(cells[0]);
 			DomainValidation.recurring(recurring);
 
-			if (!ids.add(DomainValidation.uuid(recurring.getId())))
+			if (!ids.add(DomainValidation.uuid(recurring.getId()))) {
 				throw new IllegalArgumentException("Identifiant de série dupliqué.");
+			}
+
 			return recurring;
 		});
 	}
@@ -50,8 +60,10 @@ public final class RecurringInterventionCsvRepository {
 		for (RecurringIntervention recurring : recurringInterventions) {
 			DomainValidation.recurring(recurring);
 
-			if (!ids.add(DomainValidation.uuid(recurring.getId())))
+			if (!ids.add(DomainValidation.uuid(recurring.getId()))) {
 				throw new IllegalArgumentException("Identifiant de série dupliqué.");
+			}
+
 			Employee employee = recurring.getEmployee();
 			content.append(CsvFormat.row(recurring.getId(), recurring.getClient().getFirstName(),
 					recurring.getClient().getLastName(), employee == null ? "" : employee.getFirstName(),

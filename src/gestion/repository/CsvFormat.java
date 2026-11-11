@@ -10,7 +10,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Map;
 
-
 final class CsvFormat {
 
 	private static final ThreadLocal<Map<Path, String>> SNAPSHOT = new ThreadLocal<>();
@@ -21,15 +20,19 @@ final class CsvFormat {
 	}
 
 	static void withSnapshot(Map<Path, String> content, CheckedAction action) throws IOException {
-		if (SNAPSHOT.get() != null)
+
+		if (SNAPSHOT.get() != null) {
 			throw new IllegalStateException("Validation CSV déjà en cours.");
+		}
 
 		SNAPSHOT.set(Map.copyOf(content));
+
 		try {
 			action.run();
 		} finally {
 			SNAPSHOT.remove();
 		}
+
 	}
 
 	private CsvFormat() {
@@ -44,16 +47,21 @@ final class CsvFormat {
 
 		Map<Path, String> snapshot = SNAPSHOT.get();
 
-		if (snapshot == null)
+		if (snapshot == null) {
 			CsvStore.recover(path.toAbsolutePath().getParent());
+		}
+
 		ArrayList<T> result = new ArrayList<>();
 
-		if (snapshot == null && Files.notExists(path))
+		if (snapshot == null && Files.notExists(path)) {
 			return result;
+		}
+
 		int lineNumber = 0;
 
-		if (snapshot != null && !snapshot.containsKey(CsvStore.directory(path)))
+		if (snapshot != null && !snapshot.containsKey(CsvStore.directory(path))) {
 			throw new IOException("Fichier absent de l'aperçu de migration : " + path.getFileName());
+		}
 
 		try (var reader = snapshot == null ? Files.newBufferedReader(path, StandardCharsets.UTF_8)
 				: new BufferedReader(new StringReader(snapshot.get(CsvStore.directory(path))))) {
@@ -62,13 +70,18 @@ final class CsvFormat {
 
 			while ((line = reader.readLine()) != null) {
 				lineNumber++;
-				if (line.isBlank())
+
+				if (line.isBlank()) {
 					continue;
+				}
+
 				try {
 					result.add(parser.parse(line.split(";", -1)));
 				} catch (RuntimeException invalid) {
-					throw new IOException(path.getFileName() + ", ligne " + lineNumber + " : " + invalid.getMessage(), invalid);
+					throw new IOException(path.getFileName() + ", ligne " + lineNumber + " : " + invalid.getMessage(),
+							invalid);
 				}
+
 			}
 
 		} catch (IOException e) {
@@ -86,13 +99,19 @@ final class CsvFormat {
 		} catch (IOException e) {
 			throw new UncheckedIOException(e.getMessage(), e);
 		}
+
 	}
 
 	static void columns(String[] cells, int... accepted) {
 
-		for (int count : accepted)
-			if (cells.length == count)
+		for (int count : accepted) {
+
+			if (cells.length == count) {
 				return;
+			}
+
+		}
+
 		throw new IllegalArgumentException("Nombre de colonnes invalide.");
 	}
 

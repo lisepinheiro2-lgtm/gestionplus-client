@@ -11,5 +11,6 @@ public record DateRange(LocalDate start, LocalDate end) {
 		if (!PeriodUtils.isValidPeriod(start, end)) {
 			throw new IllegalArgumentException("Période invalide");
 		}
+
 	}
 }

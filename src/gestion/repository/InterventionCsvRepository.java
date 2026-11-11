@@ -1,10 +1,23 @@
 package gestion.repository;
 
 import java.nio.file.Path;
-import java.time.*;
-import java.util.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
 
-import gestion.model.*;
+import gestion.model.Client;
+import gestion.model.DateTimeRange;
+import gestion.model.Employee;
+import gestion.model.Intervention;
 import gestion.util.DomainValidation;
 
 public final class InterventionCsvRepository {
@@ -38,10 +51,14 @@ public final class InterventionCsvRepository {
 				throw new IllegalArgumentException("UUID intervention en double : " + intervention.getInterventionID());
 			}
 
-			if (!cells[8].isEmpty())
+			if (!cells[8].isEmpty()) {
 				intervention.setRecurringId(cells[8]);
-			if (!cells[9].isEmpty())
+			}
+
+			if (!cells[9].isEmpty()) {
 				intervention.setSourceAbsenceId(cells[9]);
+			}
+
 			overlaps.add(intervention);
 
 			return intervention;
@@ -56,8 +73,9 @@ public final class InterventionCsvRepository {
 			DateTimeRange range = DomainValidation.intervention(intervention);
 			Employee employee = intervention.getEmployee();
 
-			if (employee == null)
+			if (employee == null) {
 				return;
+			}
 
 			NavigableMap<LocalDateTime, DateTimeRange> periods = employees.computeIfAbsent(
 					employee.getEmployeeID(), id -> new TreeMap<>());
@@ -65,8 +83,9 @@ public final class InterventionCsvRepository {
 			var next = periods.ceilingEntry(range.start());
 
 			if ((previous != null && previous.getValue().end().isAfter(range.start()))
-					|| (next != null && next.getKey().isBefore(range.end())))
+					|| (next != null && next.getKey().isBefore(range.end()))) {
 				throw new IllegalArgumentException("Un salarié ne peut effectuer deux interventions simultanées.");
+			}
 
 			periods.put(range.start(), range);
 		}
@@ -83,8 +102,9 @@ public final class InterventionCsvRepository {
 
 			overlaps.add(intervention);
 
-			if (!savedIds.add(intervention.getInterventionID()))
+			if (!savedIds.add(intervention.getInterventionID())) {
 				throw new IllegalArgumentException("UUID intervention dupliqué : " + intervention.getInterventionID());
+			}
 
 			Employee employee = intervention.getEmployee();
 

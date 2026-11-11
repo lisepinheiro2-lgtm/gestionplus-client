@@ -1,7 +1,6 @@
 package gestion.ui.personnel;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.GridBagLayout;
@@ -122,8 +121,9 @@ public final class PersonnelPanel extends JPanel {
 
 		JPanel block = new JPanel(new BorderLayout(0, 4));
 
-		if (field != contractHours)
+		if (field != contractHours) {
 			block.setBorder(BorderFactory.createEmptyBorder(0, 18, 0, 7));
+		}
 
 		field.putClientProperty("JComponent.roundRect", true);
 		field.setPreferredSize(new Dimension(160, 30));
@@ -140,29 +140,37 @@ public final class PersonnelPanel extends JPanel {
 		table.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent event) {
-				if (!SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 2)
+
+				if (!SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 2) {
 					return;
+				}
 
 				int row = table.rowAtPoint(event.getPoint());
 				int column = table.columnAtPoint(event.getPoint());
 
-				if (row < 0 || column < 0)
+				if (row < 0 || column < 0) {
 					return;
+				}
 
 				Employee employee = model.rowAt(table.convertRowIndexToModel(row)).employee();
 				int result = table.convertColumnIndexToModel(column);
 
 				if (result == 3) {
-					if (EmployeeStatusDialog.show(PersonnelPanel.this, controller, employee))
+
+					if (EmployeeStatusDialog.show(PersonnelPanel.this, controller, employee)) {
 						refreshTable();
+					}
+
 				} else if (result == 4 || result == 5) {
 					boolean attribuateHours = result == 4;
 					DateRange period = selectedPeriod.getSelectedPeriod();
-					PersonnelInterventionsDialog interventionsDialog = new PersonnelInterventionsDialog(planning, recurring,
+					PersonnelInterventionsDialog interventionsDialog = new PersonnelInterventionsDialog(planning,
+							recurring,
 							PersonnelPanel.this::refreshTable);
 
 					interventionsDialog.open(employee, period, attribuateHours, PersonnelPanel.this);
 				}
+
 			}
 		});
 
@@ -193,6 +201,7 @@ public final class PersonnelPanel extends JPanel {
 		} catch (IllegalArgumentException | UncheckedIOException exception) {
 			ActionDialogs.error(this, exception);
 		}
+
 	}
 
 	private void editEmployee(Employee employee, String firstName, String lastName, String contractHours) {
@@ -207,6 +216,7 @@ public final class PersonnelPanel extends JPanel {
 		} finally {
 			refreshTable();
 		}
+
 	}
 
 	private void removeEmployee() {
@@ -226,20 +236,32 @@ public final class PersonnelPanel extends JPanel {
 		} catch (IllegalArgumentException | UncheckedIOException exception) {
 			ActionDialogs.error(this, exception);
 		}
+
 	}
 
 	public void refreshTable() {
 		int row = table.getSelectedRow();
 		Employee selected = row < 0 ? null : model.rowAt(table.convertRowIndexToModel(row)).employee();
 		model.setRows(controller.getRows(selectedPeriod.getDate(), selectedPeriod.isMonthly()));
-		if (selected != null)
-			for (int index = 0; index < model.getRowCount(); index++)
+
+		if (selected != null) {
+
+			for (int index = 0; index < model.getRowCount(); index++) {
+
 				if (model.rowAt(index).employee() == selected) {
 					int view = table.convertRowIndexToView(index);
-					if (view >= 0 && !table.isRowSelected(view))
+
+					if (view >= 0 && !table.isRowSelected(view)) {
 						table.setRowSelectionInterval(view, view);
+					}
+
 					break;
 				}
+
+			}
+
+		}
+
 	}
 
 	static final class PersonnelActionButton extends JButton implements AppThemeAware {

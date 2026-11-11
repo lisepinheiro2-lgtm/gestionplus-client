@@ -1,15 +1,15 @@
 package gestion.ui.personnel;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.time.LocalDateTime;
@@ -58,18 +58,21 @@ final class AssignmentReviewPanel extends JPanel {
 	private SelectAllTableHeader releaseHeader;
 	private final JLabel selectionSummary = new JLabel();
 	private LocalDateTime nextRefreshAt;
-	
+
 	private final Timer availability = new Timer(1000, event -> {
-		if (nextRefreshAt != null && nextRefreshAt.isBefore(LocalDateTime.now()))
+
+		if (nextRefreshAt != null && nextRefreshAt.isBefore(LocalDateTime.now())) {
 			recalculate();
+		}
+
 	});
-	
+
 	private final JLabel conflictCount = new JLabel();
-	
+
 	private final JLabel message = new JLabel() {
 		@Override
 		protected void paintComponent(Graphics graphics) {
-			
+
 			boolean blocked = Boolean.TRUE.equals(getClientProperty("blocked"));
 			boolean dark = UIUtils.isDarkMode();
 			Graphics2D g = (Graphics2D) graphics.create();
@@ -86,7 +89,7 @@ final class AssignmentReviewPanel extends JPanel {
 			super.paintComponent(graphics);
 		}
 	};
-	
+
 	private final JButton confirm = new JButton("Confirmer");
 	private Plan preview;
 	private final AbstractTableModel conflictModel = new AbstractTableModel() {
@@ -109,7 +112,7 @@ final class AssignmentReviewPanel extends JPanel {
 
 		@Override
 		public Class<?> getColumnClass(int column) {
-			
+
 			return switch (column) {
 			case 0 -> Boolean.class;
 			case 2 -> LocalDateTime.class;
@@ -140,8 +143,10 @@ final class AssignmentReviewPanel extends JPanel {
 
 		@Override
 		public void setValueAt(Object value, int row, int column) {
-			if (!isCellEditable(row, column))
+
+			if (!isCellEditable(row, column)) {
 				return;
+			}
 
 			Intervention intervention = conflicts.get(row);
 
@@ -187,12 +192,18 @@ final class AssignmentReviewPanel extends JPanel {
 		add(createActions(onConfirm, onCancel), BorderLayout.SOUTH);
 
 		occurrences.addItemListener(event -> {
-			if (event.getStateChange() == java.awt.event.ItemEvent.SELECTED)
+
+			if (event.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
 				recalculate();
+			}
+
 		});
 		series.addItemListener(event -> {
-			if (event.getStateChange() == java.awt.event.ItemEvent.SELECTED)
+
+			if (event.getStateChange() == java.awt.event.ItemEvent.SELECTED) {
 				recalculate();
+			}
+
 		});
 
 		UIUtils.applyTheme(this);
@@ -229,9 +240,12 @@ final class AssignmentReviewPanel extends JPanel {
 		for (Intervention intervention : interventions) {
 			LocalDateTime start = LocalDateTime.of(intervention.getStartDate(), intervention.getStartTime());
 
-			if (!start.isBefore(now) && (nextRefreshAt == null || start.isBefore(nextRefreshAt)))
+			if (!start.isBefore(now) && (nextRefreshAt == null || start.isBefore(nextRefreshAt))) {
 				nextRefreshAt = start;
+			}
+
 		}
+
 	}
 
 	private JPanel createOptions() {
@@ -280,6 +294,7 @@ final class AssignmentReviewPanel extends JPanel {
 					choices.setLayout(stacked ? new GridLayout(2, 1, 0, 2) : new FlowLayout(FlowLayout.LEFT, 8, 0));
 					choices.revalidate();
 				}
+
 			}
 		});
 		return choices;
@@ -323,13 +338,15 @@ final class AssignmentReviewPanel extends JPanel {
 				Intervention intervention = conflicts.get(source.convertRowIndexToModel(row));
 				int modelColumn = source.convertColumnIndexToModel(column);
 
-				if (modelColumn == 2)
+				if (modelColumn == 2) {
 					setText(FormatUtils.formatDate(intervention.getStartDate())
 							+ (intervention.getStartDate().equals(intervention.getEndDate()) ? ""
 									: " – " + FormatUtils.formatDate(intervention.getEndDate())));
+				}
 
-				if (modelColumn == 4)
+				if (modelColumn == 4) {
 					setText(FormatUtils.formatContractHours(intervention.getDurationHours()));
+				}
 
 				return this;
 			}
@@ -383,8 +400,10 @@ final class AssignmentReviewPanel extends JPanel {
 	}
 
 	private void updateConflictHeight(int availableHeight) {
-		if (conflictScroll == null || !conflictPanel.isVisible() || conflicts.isEmpty())
+
+		if (conflictScroll == null || !conflictPanel.isVisible() || conflicts.isEmpty()) {
 			return;
+		}
 
 		JTable table = (JTable) conflictScroll.getViewport().getView();
 		Insets insets = conflictScroll.getInsets();
@@ -397,12 +416,14 @@ final class AssignmentReviewPanel extends JPanel {
 		int rows = Math.min(conflicts.size(), Math.min(5, capacity));
 		int height = header + rows * rowHeight;
 
-		if (conflictScroll.getPreferredSize().height != height)
+		if (conflictScroll.getPreferredSize().height != height) {
 			conflictScroll.setPreferredSize(new Dimension(0, height));
+		}
+
 	}
 
 	private void showMessage(String text, boolean blocked) {
-		
+
 		message.putClientProperty("blocked", blocked);
 		message.setText(
 				"<html><b>" + (blocked ? "Validation bloquée" : "À confirmer") + "</b> — " + escape(text) + "</html>");
@@ -421,8 +442,11 @@ final class AssignmentReviewPanel extends JPanel {
 		UIUtils.styleRoundedButton(cancel);
 
 		confirm.addActionListener(event -> {
-			if (preview != null && confirm.isEnabled())
+
+			if (preview != null && confirm.isEnabled()) {
 				onConfirm.accept(preview);
+			}
+
 		});
 
 		cancel.addActionListener(event -> onCancel.run());
@@ -470,9 +494,10 @@ final class AssignmentReviewPanel extends JPanel {
 
 					series.isSelected() ? "récurrences futures, détail par semaine" : "occurrences sélectionnées");
 
-			if (detected.stream().anyMatch(c -> !c.canRelease()))
+			if (detected.stream().anyMatch(c -> !c.canRelease())) {
 				throw new IllegalArgumentException(
 						"Des interventions sélectionnées se chevauchent entre elles. Revoyez la sélection initiale.");
+			}
 
 			assignments.validate(plan);
 
@@ -487,6 +512,7 @@ final class AssignmentReviewPanel extends JPanel {
 				showMessage(plan.targets().size() + " occurrence(s), " + releases.size()
 						+ " libération(s). Aucune modification avant confirmation.", false);
 			}
+
 		} catch (IllegalArgumentException | IllegalStateException exception) {
 			showMessage(exception.getMessage(), true);
 		}

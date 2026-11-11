@@ -114,8 +114,9 @@ final class AssignmentImpactGroups extends JPanel {
 			page = Math.min(page, Math.max(0, (others.size() - 1) / 2));
 			int index = 0;
 
-			while (index + 1 < weeks.size() && weekAnchor != null && weeks.get(index).isBefore(weekAnchor))
+			while (index + 1 < weeks.size() && weekAnchor != null && weeks.get(index).isBefore(weekAnchor)) {
 				index++;
+			}
 
 			weekPage = index / WEEKS_PER_PAGE;
 			weekAnchor = weeks.get(weekPage * WEEKS_PER_PAGE);
@@ -127,7 +128,8 @@ final class AssignmentImpactGroups extends JPanel {
 	private JButton createArrow(String text, String description) {
 		JButton button = new JButton();
 		button.putClientProperty("gestion.icon", text.equals("‹")
-				? gestion.ui.NavigationIcon.Kind.CHEVRON_LEFT : gestion.ui.NavigationIcon.Kind.CHEVRON_RIGHT);
+				? gestion.ui.NavigationIcon.Kind.CHEVRON_LEFT
+				: gestion.ui.NavigationIcon.Kind.CHEVRON_RIGHT);
 		UIUtils.styleActionButton(button, "neutral");
 		UIUtils.styleRoundedButton(button);
 		button.setFont(button.getFont().deriveFont(Font.PLAIN, 20f));
@@ -141,8 +143,9 @@ final class AssignmentImpactGroups extends JPanel {
 	private void changePage(int direction) {
 		int requested = page + direction;
 
-		if (requested < 0 || requested * 2 >= relevantEmployees(visibleWeeks()).size())
+		if (requested < 0 || requested * 2 >= relevantEmployees(visibleWeeks()).size()) {
 			return;
+		}
 
 		page = requested;
 		showPage();
@@ -151,8 +154,9 @@ final class AssignmentImpactGroups extends JPanel {
 	private void changeWeeks(int direction) {
 		int requested = weekPage + direction;
 
-		if (requested < 0 || requested * WEEKS_PER_PAGE >= weeks.size())
+		if (requested < 0 || requested * WEEKS_PER_PAGE >= weeks.size()) {
 			return;
+		}
 
 		weekPage = requested;
 		weekAnchor = weeks.get(weekPage * WEEKS_PER_PAGE);
@@ -185,8 +189,9 @@ final class AssignmentImpactGroups extends JPanel {
 		previousWeeks.setEnabled(weekPage > 0);
 		nextWeeks.setEnabled((weekPage + 1) * WEEKS_PER_PAGE < weeks.size());
 
-		if (visible.isEmpty())
+		if (visible.isEmpty()) {
 			return;
+		}
 
 		int start = weekPage * WEEKS_PER_PAGE;
 		weekPosition.setText((start + visible.size()) + " " + (start + visible.size() == 1 ? "semaine" : "semaines")
@@ -207,8 +212,9 @@ final class AssignmentImpactGroups extends JPanel {
 		List<LocalDate> visible = visibleWeeks();
 		List<AssignmentImpactCard> relevant = relevantEmployees(visible);
 
-		if (!visible.isEmpty())
+		if (!visible.isEmpty()) {
 			page = Math.min(page, Math.max(0, (relevant.size() - 1) / 2));
+		}
 
 		int start = Math.min(page * 2, relevant.size());
 		int end = Math.min(start + 2, relevant.size());
@@ -216,16 +222,19 @@ final class AssignmentImpactGroups extends JPanel {
 		int columns = Math.max(1, Math.min(recipient == null ? 2 : 3, total));
 		cards.setLayout(new GridLayout(1, columns, 8, 0));
 
-		if (recipient != null)
+		if (recipient != null) {
 			addCard(recipient, visible);
+		}
 
-		for (int index = start; index < end; index++)
+		for (int index = start; index < end; index++) {
 			addCard(relevant.get(index), visible);
+		}
 
 		updateWeekNavigation(visible);
 
-		while (cards.getComponentCount() < columns)
+		while (cards.getComponentCount() < columns) {
 			cards.add(Box.createHorizontalStrut(0));
+		}
 
 		int changed = relevant.size() + (recipient != null && recipient.hasChanges(visible) ? 1 : 0);
 		count.setText(changed + " salarié(s) impacté(s)");
@@ -250,8 +259,9 @@ final class AssignmentImpactGroups extends JPanel {
 			super.layoutContainer(parent);
 			Component title = getLayoutComponent(parent, BorderLayout.CENTER);
 
-			if (title == null)
+			if (title == null) {
 				return;
+			}
 
 			Insets insets = parent.getInsets();
 			int margin = Math.max(sideWidth(getLayoutComponent(parent, BorderLayout.WEST)),

@@ -1,18 +1,46 @@
 package gestion.ui;
 
-import static org.junit.jupiter.api.Assertions.*;
-import java.awt.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.io.IOException;
-import java.lang.reflect.*;
-import java.nio.file.*;
-import java.time.*;
-import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.function.*;
-import javax.swing.*;
-import org.junit.jupiter.api.*;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
+
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import gestion.model.*;
+
+import gestion.model.Intervention;
 import gestion.ui.intervention.InterventionUI;
 import gestionTest.support.TestFixture;
 
@@ -61,16 +89,22 @@ class UiReliabilityTest {
 		} catch (InvocationTargetException e) {
 			throw new AssertionError(e.getCause());
 		}
+
 	}
 
 	static <T> List<T> find(Container root, Class<T> type) {
 		List<T> found = new ArrayList<>();
 
 		for (Component child : root.getComponents()) {
-			if (type.isInstance(child))
+
+			if (type.isInstance(child)) {
 				found.add(type.cast(child));
-			if (child instanceof Container container)
+			}
+
+			if (child instanceof Container container) {
 				found.addAll(find(container, type));
+			}
+
 		}
 
 		return found;
@@ -79,8 +113,10 @@ class UiReliabilityTest {
 	@Test
 	void selectionRemainsTheDisplayedObjectAfterPageSizeChangesAndDeletesThatObject() throws Exception {
 
-		for (int day = 0; day < 35; day++)
+		for (int day = 0; day < 35; day++) {
 			f.add(null, f.future.plusDays(day), 8, 10);
+		}
+
 		SwingUtilities.invokeAndWait(() -> {
 
 			try {
@@ -98,8 +134,11 @@ class UiReliabilityTest {
 				assertSame(displayed, invoke(panel, "getSelectedIntervention"));
 				var resized = new java.awt.event.ComponentEvent(scroll.getViewport(),
 						java.awt.event.ComponentEvent.COMPONENT_RESIZED);
-				for (var listener : scroll.getViewport().getComponentListeners())
+
+				for (var listener : scroll.getViewport().getComponentListeners()) {
 					listener.componentResized(resized);
+				}
+
 				assertSame(displayed, invoke(panel, "getSelectedIntervention"));
 				invoke(panel, "removeIntervention");
 				assertFalse(f.planning.getInterventions().contains(displayed));
@@ -108,6 +147,7 @@ class UiReliabilityTest {
 			} catch (Exception e) {
 				throw new AssertionError(e);
 			}
+
 		});
 
 		f.reload();
@@ -121,15 +161,23 @@ class UiReliabilityTest {
 			for (JPanel panel : List.of(new ClientUI(f.clients),
 					new ReplacementUI(f.replacements, f.personnel, f.planning),
 					new InterventionUI(f.planning, f.recurring, f.clients, f.personnel))) {
-				if (panel instanceof InterventionUI interventions)
+
+				if (panel instanceof InterventionUI interventions) {
 					interventions.refreshIntervention();
+				}
+
 				JTable table = find(panel, JTable.class).getFirst();
 
-				for (int column = 0; column < table.getColumnCount(); column++)
+				for (int column = 0; column < table.getColumnCount(); column++) {
 					assertFalse(table.getModel().isCellEditable(0, column));
-				if (panel instanceof InterventionUI)
+				}
+
+				if (panel instanceof InterventionUI) {
 					assertEquals("Fictif Client", table.getValueAt(0, 0));
+				}
+
 			}
+
 		});
 	}
 
@@ -145,8 +193,10 @@ class UiReliabilityTest {
 						"addressField", "Adresse fictive", "totalHoursField", "5", "startDateField", "", "endDateField",
 						"");
 
-				for (var entry : values.entrySet())
+				for (var entry : values.entrySet()) {
 					((JTextField) field(panel, entry.getKey())).setText(entry.getValue());
+				}
+
 				invoke(panel, "addClient");
 				assertEquals(1, errors.size());
 				assertEquals(1, f.clients.getClients().size());
@@ -155,6 +205,7 @@ class UiReliabilityTest {
 			} catch (Exception e) {
 				throw new AssertionError(e);
 			}
+
 		});
 	}
 
@@ -167,8 +218,11 @@ class UiReliabilityTest {
 				f.personnel.addEmployee("Dora", "Delta", 20, "Opérationnel", 0, 0);
 				panel.refreshTable();
 				assertEquals(4, ((JComboBox<?>) field(panel, "employeeToReplaceBox")).getItemCount());
-				while (!f.personnel.isEmpty())
+
+				while (!f.personnel.isEmpty()) {
 					f.personnel.removeEmployee(0);
+				}
+
 				panel.refreshTable();
 				assertEquals(0, ((JComboBox<?>) field(panel, "employeeToReplaceBox")).getItemCount());
 				((JTextField) field(panel, "startDateField")).setText(gestion.util.FormatUtils.formatDate(f.future));
@@ -181,6 +235,7 @@ class UiReliabilityTest {
 			} catch (Exception e) {
 				throw new AssertionError(e);
 			}
+
 		});
 	}
 
@@ -213,17 +268,28 @@ class UiReliabilityTest {
 		java.util.logging.Handler handler = new java.util.logging.Handler() {
 			@Override
 			public void publish(java.util.logging.LogRecord record) {
-				if (record.getLevel().intValue() >= java.util.logging.Level.WARNING.intValue())
+
+				if (record.getLevel().intValue() >= java.util.logging.Level.WARNING.intValue()) {
 					messages.add(record);
+				}
+
 			}
-			@Override public void flush() { }
-			@Override public void close() { }
+
+			@Override
+			public void flush() {
+			}
+
+			@Override
+			public void close() {
+			}
 		};
 		var logger = java.util.logging.Logger.getLogger("");
 		logger.addHandler(handler);
 		boolean dark = UIUtils.isDarkMode();
+
 		try {
 			SwingUtilities.invokeAndWait(() -> {
+
 				for (boolean mode : new boolean[] { false, true }) {
 					UIUtils.setDarkMode(mode);
 					UIUtils.installLookAndFeel();
@@ -233,9 +299,11 @@ class UiReliabilityTest {
 					Color second = table.prepareRenderer(table.getCellRenderer(1, 0), 1, 0).getBackground();
 					assertNotEquals(first, second);
 					table.setRowSelectionInterval(0, 0);
-					assertEquals(table.getSelectionBackground(), table.prepareRenderer(table.getCellRenderer(0, 0), 0, 0).getBackground());
+					assertEquals(table.getSelectionBackground(),
+							table.prepareRenderer(table.getCellRenderer(0, 0), 0, 0).getBackground());
 					UIUtils.applyTheme(table);
 				}
+
 			});
 			assertTrue(messages.stream().noneMatch(record -> String.valueOf(record.getLoggerName()).contains("FlatLaf")
 					|| record.getThrown() != null && record.getThrown().getClass().getName().contains("flatlaf")),
@@ -244,17 +312,22 @@ class UiReliabilityTest {
 			SwingUtilities.invokeAndWait(() -> UIUtils.setDarkMode(dark));
 			logger.removeHandler(handler);
 		}
+
 	}
 
 	@Test
 	void weeklyPlanningGroupsOnlySimultaneousOverflowAndKeepsEveryIntervention() throws Exception {
 		List<Intervention> expected = new ArrayList<>();
 		expected.add(f.add(null, f.future, 8, 18));
-		for (int hour = 8; hour < 14; hour++)
+
+		for (int hour = 8; hour < 14; hour++) {
 			expected.add(f.add(null, f.future, hour, hour + 1));
+		}
+
 		expected.add(f.add(null, f.future, 9, 10));
 		expected.add(f.add(null, f.future, 9, 10));
 		SwingUtilities.invokeAndWait(() -> {
+
 			try {
 				var panel = new gestion.ui.planning.PlanningUI(f.planning, f.personnel, f.clients, f.recurring);
 				setField(panel, "currentDate", f.future);
@@ -263,37 +336,53 @@ class UiReliabilityTest {
 				Set<Intervention> represented = new HashSet<>();
 				boolean grouped = false;
 				boolean morningBlock = false;
+
 				for (JButton button : find(panel, JButton.class)) {
+
 					if (button.getClientProperty("planning.intervention") instanceof Intervention intervention) {
 						represented.add(intervention);
-						int start = intervention.getStartTime().getHour() * 60 + intervention.getStartTime().getMinute();
+						int start = intervention.getStartTime().getHour() * 60
+								+ intervention.getStartTime().getMinute();
 						int end = intervention.getEndTime().getHour() * 60 + intervention.getEndTime().getMinute();
 						assertTrue(button.getY() >= start && button.getY() + button.getHeight() <= end);
-						morningBlock |= intervention.getStartTime().getHour() == 8 && intervention.getEndTime().getHour() == 9;
+						morningBlock |= intervention.getStartTime().getHour() == 8
+								&& intervention.getEndTime().getHour() == 9;
 					}
+
 					if (button.getClientProperty("planning.group") instanceof List<?> targets) {
 						grouped = true;
 						assertTrue(button.getY() >= 9 * 60 && button.getY() + button.getHeight() <= 10 * 60);
-						for (Object target : targets)
+
+						for (Object target : targets) {
 							represented.add((Intervention) target);
+						}
+
 					}
+
 				}
+
 				assertTrue(grouped);
 				assertTrue(morningBlock);
 				assertEquals(new HashSet<>(expected), represented);
 			} catch (Exception exception) {
 				throw new AssertionError(exception);
 			}
+
 		});
 	}
 
 	@Test
 	void homeHidesQuickNavigationAndBusinessPagesKeepItWithoutActivatingDocuments() throws Exception {
 		SwingUtilities.invokeAndWait(() -> {
+
 			try {
 				var image = new ImageIcon(getClass().getResource("/icons/gestion-64.png")).getImage();
 				ApplicationHeader header = new ApplicationHeader(new JPanel(), new JButton("Accueil"), image);
-				header.configureNavigation(() -> { }, () -> { }, () -> { }, () -> { });
+				header.configureNavigation(() -> {
+				}, () -> {
+				}, () -> {
+				}, () -> {
+				});
 				JPanel navigation = (JPanel) field(header, "navigation");
 				assertFalse(navigation.isVisible());
 				header.setPageTitle("Planning");
@@ -305,6 +394,7 @@ class UiReliabilityTest {
 			} catch (Exception exception) {
 				throw new AssertionError(exception);
 			}
+
 		});
 	}
 }

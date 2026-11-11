@@ -17,8 +17,8 @@ import java.awt.geom.RoundRectangle2D;
 import java.util.EventObject;
 
 import javax.swing.BorderFactory;
-import javax.swing.JTable;
 import javax.swing.JLabel;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.table.TableCellEditor;
@@ -78,15 +78,18 @@ final class PersonnelTable extends JTable {
 		Component component = renderer.getTableCellRendererComponent(this, getValueAt(row, column),
 				!isPaintingForPrint() && isCellSelected(row, column), false, row, column);
 
-		if (convertColumnIndexToModel(column) < 3 && component instanceof JLabel label)
+		if (convertColumnIndexToModel(column) < 3 && component instanceof JLabel label) {
 			label.setBorder(TEXT_PADDING);
+		}
 
 		return component;
 	}
 
 	private boolean supportsHalo(int row, int column) {
-		if (row < 0 || row >= getRowCount() || column < 0 || column >= getColumnCount())
+
+		if (row < 0 || row >= getRowCount() || column < 0 || column >= getColumnCount()) {
 			return false;
+		}
 
 		int modelColumn = convertColumnIndexToModel(column);
 		return isCellEditable(row, column) || modelColumn == 4 || modelColumn == 5;
@@ -101,8 +104,9 @@ final class PersonnelTable extends JTable {
 			column = -1;
 		}
 
-		if (row == hoveredRow && column == hoveredColumn)
+		if (row == hoveredRow && column == hoveredColumn) {
 			return;
+		}
 
 		repaintCell(hoveredRow, hoveredColumn);
 		hoveredRow = row;
@@ -117,8 +121,10 @@ final class PersonnelTable extends JTable {
 	}
 
 	private void refreshActiveCell() {
-		if (!effectsReady)
+
+		if (!effectsReady) {
 			return;
+		}
 
 		int row = isEditing() ? getEditingRow() : getSelectionModel().getLeadSelectionIndex();
 		int column = isEditing() ? getEditingColumn() : getColumnModel().getSelectionModel().getLeadSelectionIndex();
@@ -128,8 +134,9 @@ final class PersonnelTable extends JTable {
 			column = -1;
 		}
 
-		if (row == activeRow && column == activeColumn)
+		if (row == activeRow && column == activeColumn) {
 			return;
+		}
 
 		repaintCell(activeRow, activeColumn);
 		activeRow = row;
@@ -138,8 +145,10 @@ final class PersonnelTable extends JTable {
 	}
 
 	private void repaintCell(int row, int column) {
-		if (!effectsReady || row < 0 || row >= getRowCount() || column < 0 || column >= getColumnCount())
+
+		if (!effectsReady || row < 0 || row >= getRowCount() || column < 0 || column >= getColumnCount()) {
 			return;
+		}
 
 		Rectangle bounds = getCellRect(row, column, true);
 		bounds.grow(3, 3);
@@ -163,8 +172,10 @@ final class PersonnelTable extends JTable {
 	}
 
 	private void restoreEditorBorder() {
-		if (styledEditor != null && styledEditor.getBorder() == editorPadding)
+
+		if (styledEditor != null && styledEditor.getBorder() == editorPadding) {
 			styledEditor.setBorder(originalEditorBorder);
+		}
 
 		styledEditor = null;
 		originalEditorBorder = null;
@@ -175,8 +186,9 @@ final class PersonnelTable extends JTable {
 	public boolean editCellAt(int row, int column, EventObject event) {
 		boolean started = super.editCellAt(row, column, event);
 
-		if (!started)
+		if (!started) {
 			restoreEditorBorder();
+		}
 
 		refreshActiveCell();
 		return started;
@@ -218,14 +230,17 @@ final class PersonnelTable extends JTable {
 		Rectangle clip = graphics.getClipBounds();
 		int first = firstVisibleRow(clip);
 
-		if (first < 0 || getColumnCount() == 0)
+		if (first < 0 || getColumnCount() == 0) {
 			return;
+		}
 
 		Area visible = new Area(graphics.getClip());
 
 		for (int row = first, last = lastVisibleRow(clip); row <= last; row++) {
-			if (!wholeRowSelected(row))
+
+			if (!wholeRowSelected(row)) {
 				continue;
+			}
 
 			Rectangle bounds = rowBounds(row);
 			Area corners = new Area(bounds);
@@ -241,8 +256,10 @@ final class PersonnelTable extends JTable {
 		Graphics2D g = (Graphics2D) graphics.create();
 
 		try {
-			if (g.getClip() == null)
+
+			if (g.getClip() == null) {
 				g.setClip(0, 0, getWidth(), getHeight());
+			}
 
 			if (isOpaque()) {
 				g.setColor(getBackground());
@@ -255,6 +272,7 @@ final class PersonnelTable extends JTable {
 		} finally {
 			g.dispose();
 		}
+
 	}
 
 	@Override
@@ -262,8 +280,10 @@ final class PersonnelTable extends JTable {
 		Graphics2D g = (Graphics2D) graphics.create();
 
 		try {
-			if (g.getClip() == null)
+
+			if (g.getClip() == null) {
 				g.setClip(0, 0, getWidth(), getHeight());
+			}
 
 			clipSelectedRows(g);
 
@@ -280,6 +300,7 @@ final class PersonnelTable extends JTable {
 		} finally {
 			g.dispose();
 		}
+
 	}
 
 	@Override
@@ -292,25 +313,36 @@ final class PersonnelTable extends JTable {
 			g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 			Rectangle clip = g.getClipBounds();
 
-			if (clip == null)
+			if (clip == null) {
 				clip = new Rectangle(0, 0, getWidth(), getHeight());
+			}
 
 			int first = firstVisibleRow(clip);
 
 			if (first >= 0 && getColumnCount() > 0) {
-				for (int row = first, last = lastVisibleRow(clip); row <= last; row++)
-					if (wholeRowSelected(row))
+
+				for (int row = first, last = lastVisibleRow(clip); row <= last; row++) {
+
+					if (wholeRowSelected(row)) {
 						paintHalo(g, rounded(rowBounds(row), 1.5), false);
+					}
+
+				}
+
 			}
 
-			if (supportsHalo(hoveredRow, hoveredColumn) && (hoveredRow != activeRow || hoveredColumn != activeColumn))
+			if (supportsHalo(hoveredRow, hoveredColumn) && (hoveredRow != activeRow || hoveredColumn != activeColumn)) {
 				paintHalo(g, rounded(getCellRect(hoveredRow, hoveredColumn, true), 2.5), false);
+			}
 
-			if (supportsHalo(activeRow, activeColumn) && (isEditing() || isRowSelected(activeRow)))
+			if (supportsHalo(activeRow, activeColumn) && (isEditing() || isRowSelected(activeRow))) {
 				paintHalo(g, rounded(getCellRect(activeRow, activeColumn, true), isEditing() ? 1.5 : 2.5), true);
+			}
+
 		} finally {
 			g.dispose();
 		}
+
 	}
 
 	private void paintHalo(Graphics2D graphics, Shape outline, boolean active) {

@@ -1,14 +1,15 @@
 package gestionTest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+
 import org.junit.jupiter.api.Test;
 
 import gestion.model.Intervention;
 import gestion.service.WorkHoursService;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class InterventionTest {
 

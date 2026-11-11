@@ -1,6 +1,7 @@
 package gestion.service;
 
 import java.nio.file.Path;
+
 import gestion.repository.CsvStore;
 
 final class ServiceChanges {
@@ -9,6 +10,7 @@ final class ServiceChanges {
 	}
 
 	static void apply(Path directory, Runnable mutation, Runnable save, Runnable restore) {
+
 		try {
 			mutation.run();
 			save.run();
@@ -18,5 +20,6 @@ final class ServiceChanges {
 			restore.run();
 			throw failure;
 		}
+
 	}
 }

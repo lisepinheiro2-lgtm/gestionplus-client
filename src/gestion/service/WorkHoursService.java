@@ -41,6 +41,7 @@ public final class WorkHoursService {
 
 				totalHours += intervention.getDurationHours();
 			}
+
 		}
 
 		return totalHours;
@@ -55,8 +56,9 @@ public final class WorkHoursService {
 		for (Intervention intervention : planning.getInterventions()) {
 			Employee assignedEmployee = intervention.getEmployee();
 
-			if (assignedEmployee == null || !assignedEmployee.getEmployeeID().equals(employee.getEmployeeID()))
+			if (assignedEmployee == null || !assignedEmployee.getEmployeeID().equals(employee.getEmployeeID())) {
 				continue;
+			}
 
 			LocalDateTime interventionStart = LocalDateTime.of(intervention.getStartDate(),
 					intervention.getStartTime());
@@ -67,6 +69,7 @@ public final class WorkHoursService {
 
 				totalHours += getInterventionHoursInPeriod(intervention, weekStart, weekEnd);
 			}
+
 		}
 
 		return totalHours;
@@ -81,8 +84,9 @@ public final class WorkHoursService {
 		for (Intervention intervention : planning.getInterventions()) {
 			Employee assignedEmployee = intervention.getEmployee();
 
-			if (assignedEmployee == null || !assignedEmployee.getEmployeeID().equals(employee.getEmployeeID()))
+			if (assignedEmployee == null || !assignedEmployee.getEmployeeID().equals(employee.getEmployeeID())) {
 				continue;
+			}
 
 			LocalDateTime interventionStart = LocalDateTime.of(intervention.getStartDate(),
 					intervention.getStartTime());
@@ -91,6 +95,7 @@ public final class WorkHoursService {
 			if (interventionEnd.isAfter(monthStart) && interventionStart.isBefore(monthEnd)) {
 				totalHours += getInterventionHoursInPeriod(intervention, monthStart, monthEnd);
 			}
+
 		}
 
 		return totalHours;
@@ -105,13 +110,16 @@ public final class WorkHoursService {
 		for (Intervention intervention : planning.getInterventions()) {
 			Employee employee = intervention.getEmployee();
 
-			if (employee == null)
+			if (employee == null) {
 				continue;
+			}
 
 			double portion = getInterventionHoursInPeriod(intervention, periodStart, periodEnd);
 
-			if (portion != 0)
+			if (portion != 0) {
 				hours.merge(employee.getEmployeeID(), portion, Double::sum);
+			}
+
 		}
 
 		return Map.copyOf(hours);
@@ -151,6 +159,7 @@ public final class WorkHoursService {
 				weeks.add(monday);
 				monday = monday.plusWeeks(1);
 			}
+
 		}
 
 		double totalOverrun = 0;
@@ -167,6 +176,7 @@ public final class WorkHoursService {
 				if (!alreadyAssigned) {
 					projectedHours += getInterventionHoursInPeriod(current, weekStart, weekEnd);
 				}
+
 			}
 
 			totalOverrun += Math.max(0, projectedHours - employee.getContractHours());
@@ -214,16 +224,22 @@ public final class WorkHoursService {
 		for (Intervention intervention : new java.util.LinkedHashSet<>(targets)) {
 			double portion = getInterventionHoursInPeriod(intervention, start.atStartOfDay(), end.atStartOfDay());
 
-			if (intervention.getEmployee() == employee)
+			if (intervention.getEmployee() == employee) {
 				hours -= portion;
+			}
 
-			if (destination == employee)
+			if (destination == employee) {
 				hours += portion;
+			}
+
 		}
 
 		for (Intervention release : new java.util.LinkedHashSet<>(releases)) {
-			if (release.getEmployee() == employee && !targets.contains(release))
+
+			if (release.getEmployee() == employee && !targets.contains(release)) {
 				hours -= getInterventionHoursInPeriod(release, start.atStartOfDay(), end.atStartOfDay());
+			}
+
 		}
 
 		return hours;
@@ -240,19 +256,23 @@ public final class WorkHoursService {
 		double expectedHours = monthly ? employee.getContractHours() * 52 / 12 : employee.getContractHours();
 		long remainingMinutes = Math.round((expectedHours - assignedHours) * 60);
 
-		if (remainingMinutes < 0)
+		if (remainingMinutes < 0) {
 			return HoursAlert.ALERT;
+		}
 
-		if (expectedHours <= 0)
+		if (expectedHours <= 0) {
 			return HoursAlert.IN_PROGRESS;
+		}
 
-		if (remainingMinutes == 0)
+		if (remainingMinutes == 0) {
 			return HoursAlert.TARGET_REACHED;
+		}
 
 		double assignedRatio = assignedHours / expectedHours;
 
-		if (assignedRatio < 0.40)
+		if (assignedRatio < 0.40) {
 			return HoursAlert.ALERT;
+		}
 
 		LocalDate periodStart = monthly ? date.withDayOfMonth(1)
 				: date.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -263,13 +283,16 @@ public final class WorkHoursService {
 		remainingDays = Math.max(0, Math.min(periodDays, remainingDays));
 		boolean nearPeriodEnd = monthly ? remainingDays <= periodDays * 0.20 : remainingDays <= 3;
 
-		if (nearPeriodEnd)
+		if (nearPeriodEnd) {
 			return HoursAlert.ALERT;
+		}
 
 		long elapsedDays = periodDays - remainingDays;
 
-		if (assignedRatio <= 0.60 || elapsedDays >= periodDays / 3)
+		if (assignedRatio <= 0.60 || elapsedDays >= periodDays / 3) {
 			return HoursAlert.WATCH;
+		}
+
 		return HoursAlert.IN_PROGRESS;
 	}
 }

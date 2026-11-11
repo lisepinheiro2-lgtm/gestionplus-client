@@ -1,10 +1,14 @@
 package gestion.repository;
 
 import java.nio.file.Path;
-import java.time.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
-import gestion.model.*;
+import gestion.model.Employee;
+import gestion.model.Replacement;
 import gestion.util.DomainValidation;
 
 public final class ReplacementCsvRepository {
@@ -43,8 +47,10 @@ public final class ReplacementCsvRepository {
 			if (!cells[10].isEmpty()) {
 				replacement.setAbsenceId(cells[10]);
 
-				if (!absenceIds.add(DomainValidation.uuid(cells[10])))
+				if (!absenceIds.add(DomainValidation.uuid(cells[10]))) {
 					throw new IllegalArgumentException("Lien d'absence dupliqué.");
+				}
+
 			}
 
 			DomainValidation.replacement(replacement);
@@ -61,8 +67,11 @@ public final class ReplacementCsvRepository {
 		for (Replacement replacement : replacements) {
 			DomainValidation.replacement(replacement);
 
-			if (replacement.getAbsenceId() != null && !absenceIds.add(DomainValidation.uuid(replacement.getAbsenceId())))
+			if (replacement.getAbsenceId() != null
+					&& !absenceIds.add(DomainValidation.uuid(replacement.getAbsenceId()))) {
 				throw new IllegalArgumentException("Lien d'absence dupliqué.");
+			}
+
 			Employee employee = replacement.getReplacementEmployee();
 			content.append(CsvFormat.row(replacement.getEmployeeToReplace().getFirstName(),
 					replacement.getEmployeeToReplace().getLastName(), replacement.getContractHoursEmployeeToReplace(),

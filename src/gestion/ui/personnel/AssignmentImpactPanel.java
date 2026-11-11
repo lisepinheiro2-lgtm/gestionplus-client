@@ -1,7 +1,6 @@
 package gestion.ui.personnel;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -98,6 +97,7 @@ final class AssignmentImpactPanel extends JPanel {
 			add(compactHeading, BorderLayout.NORTH);
 			createCompactTable(height);
 		}
+
 	}
 
 	void addHeaderAccessory(JComponent accessory) {
@@ -124,12 +124,14 @@ final class AssignmentImpactPanel extends JPanel {
 				setHorizontalAlignment(column == 0 ? JLabel.LEFT : JLabel.CENTER);
 				setToolTipText(column == 2 ? UIUtils.getHoursLegend() : null);
 
-				if (column == 2)
+				if (column == 2) {
 					setForeground(UIUtils.getHoursColor(impact.alert()));
+				}
 
-				if (column == 3 && Math.round((impact.after() - impact.before()) * 60) != 0)
+				if (column == 3 && Math.round((impact.after() - impact.before()) * 60) != 0) {
 					setForeground(
 							impact.after() > impact.before() ? UIUtils.getTurquoiseColor() : UIUtils.getVioletColor());
+				}
 
 				return this;
 			}
@@ -154,20 +156,29 @@ final class AssignmentImpactPanel extends JPanel {
 				"Impact prévisionnel — " + scope + (targets.isEmpty() ? " : sélectionnez des interventions" : ""));
 		Set<Employee> employees = new LinkedHashSet<>();
 
-		if (destination != null && !targets.isEmpty())
+		if (destination != null && !targets.isEmpty()) {
 			employees.add(destination);
+		}
 
 		Set<Intervention> touched = new LinkedHashSet<>();
 
-		for (Intervention target : targets)
-			if (target.getEmployee() != destination)
+		for (Intervention target : targets) {
+
+			if (target.getEmployee() != destination) {
 				touched.add(target);
+			}
+
+		}
 
 		touched.addAll(releases);
 
-		for (Intervention intervention : touched)
-			if (intervention.getEmployee() != null && intervention.getEmployee() != destination)
+		for (Intervention intervention : touched) {
+
+			if (intervention.getEmployee() != null && intervention.getEmployee() != destination) {
 				employees.add(intervention.getEmployee());
+			}
+
+		}
 
 		boolean monthly = context.start().getDayOfMonth() == 1
 				&& context.end().equals(context.start().plusMonths(1).minusDays(1));
@@ -177,8 +188,10 @@ final class AssignmentImpactPanel extends JPanel {
 			Set<LocalDate> weeks = new TreeSet<>();
 
 			for (Intervention intervention : touched) {
-				if (destination != employee && intervention.getEmployee() != employee)
+
+				if (destination != employee && intervention.getEmployee() != employee) {
 					continue;
+				}
 
 				LocalDate monday = intervention.getStartDate().with(DayOfWeek.MONDAY);
 				LocalDateTime end = LocalDateTime.of(intervention.getEndDate(), intervention.getEndTime());
@@ -187,21 +200,29 @@ final class AssignmentImpactPanel extends JPanel {
 					weeks.add(monday);
 					monday = monday.plusWeeks(1);
 				}
+
 			}
 
-			if (monthly && !gauges)
+			if (monthly && !gauges) {
 				addImpact(employee, context.start(), true,
-						"Mois " + context.start().format(DateTimeFormatter.ofPattern("MM/uuuu")), targets, destination, releases);
+						"Mois " + context.start().format(DateTimeFormatter.ofPattern("MM/uuuu")), targets, destination,
+						releases);
+			}
 
-			for (LocalDate monday : weeks)
-				addImpact(employee, monday, false, "Semaine du " + monday.format(format), targets, destination, releases);
+			for (LocalDate monday : weeks) {
+				addImpact(employee, monday, false, "Semaine du " + monday.format(format), targets, destination,
+						releases);
+			}
+
 		}
 
 		model.fireTableDataChanged();
+
 		if (gauges) {
 			title.setText("Prévisionnel · " + (targets.isEmpty() ? "aucune occurrence" : scope));
 			groups.showImpact(rows, destination);
 		}
+
 	}
 
 	private void addImpact(Employee employee, LocalDate date, boolean monthly, String label,

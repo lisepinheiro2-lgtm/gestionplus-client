@@ -1,15 +1,14 @@
 package gestion.ui.planning;
 
-import java.awt.Color;
-import java.io.UncheckedIOException;
-import gestion.ui.ActionDialogs;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Window;
+import java.io.UncheckedIOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -23,8 +22,9 @@ import gestion.service.PersonnelService;
 import gestion.service.PlanningService;
 import gestion.service.RecurringInterventionService;
 import gestion.service.WorkHoursService;
-import gestion.util.FormatUtils;
+import gestion.ui.ActionDialogs;
 import gestion.ui.UIUtils;
+import gestion.util.FormatUtils;
 
 public final class EmployeeAssignmentDialog {
 
@@ -56,6 +56,7 @@ public final class EmployeeAssignmentDialog {
 			if (confirmation != JOptionPane.YES_OPTION) {
 				return;
 			}
+
 		}
 
 		JPanel employeesPanel = new JPanel();
@@ -73,6 +74,7 @@ public final class EmployeeAssignmentDialog {
 		var weeklyHours = hours.getHoursByEmployee(intervention.getStartDate(), false);
 		var monthlyHours = hours.getHoursByEmployee(intervention.getStartDate(), true);
 		java.util.Map<Employee, JButton> choices = new java.util.LinkedHashMap<>();
+
 		for (Employee employee : personnel.getEmployees()) {
 			double currentHours = weeklyHours.getOrDefault(employee.getEmployeeID(), 0.0);
 			double currentMonthlyHours = monthlyHours.getOrDefault(employee.getEmployeeID(), 0.0);
@@ -139,12 +141,14 @@ public final class EmployeeAssignmentDialog {
 						if (confirmation != JOptionPane.YES_OPTION) {
 							return;
 						}
+
 					}
 
-					if (assignSeriesBox.isSelected())
+					if (assignSeriesBox.isSelected()) {
 						recurringInterventionList.assignFutureSeries(planning, recurringId, employee);
-					else
+					} else {
 						planning.assignEmployee(interventionsToAssign, employee);
+					}
 
 					onChange.run();
 
@@ -157,6 +161,7 @@ public final class EmployeeAssignmentDialog {
 				} catch (UncheckedIOException | IllegalArgumentException e) {
 					ActionDialogs.error(parent, e);
 				}
+
 			});
 
 			employeesPanel.add(employeeButton);
@@ -164,7 +169,8 @@ public final class EmployeeAssignmentDialog {
 
 		assignSeriesBox.addActionListener(event -> {
 			List<Intervention> targets = assignSeriesBox.isSelected()
-					? planning.getFutureInterventionsByRecurringId(recurringId, LocalDateTime.now()) : List.of(intervention);
+					? planning.getFutureInterventionsByRecurringId(recurringId, LocalDateTime.now())
+					: List.of(intervention);
 			choices.forEach((employee, button) -> button.setEnabled(!planning.hasOverlap(employee, targets)));
 		});
 

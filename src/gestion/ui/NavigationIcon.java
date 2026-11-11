@@ -3,19 +3,21 @@ package gestion.ui;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Graphics2D;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
+
 import javax.swing.Icon;
 
 public final class NavigationIcon implements Icon {
 	public enum Kind {
-		PEOPLE, CLIENTS, CALENDAR, REPLACEMENTS, INTERVENTIONS, ARCHIVE, SETTINGS, HOME, ARROW, USER, DOCUMENTS, ADD, DELETE, CLOCK, CHEVRON_LEFT, CHEVRON_RIGHT, CHECK, RECURRING
+		PEOPLE, CLIENTS, CALENDAR, REPLACEMENTS, INTERVENTIONS, ARCHIVE, SETTINGS, HOME, ARROW, USER, DOCUMENTS, ADD,
+		DELETE, CLOCK, CHEVRON_LEFT, CHEVRON_RIGHT, CHECK, RECURRING
 	}
 
 	private final Kind kind;
@@ -105,9 +107,15 @@ public final class NavigationIcon implements Icon {
 			line(g, 7, 3, 7, 7);
 			line(g, 17, 3, 17, 7);
 			line(g, 3, 10, 21, 10);
-			for (int row = 0; row < 2; row++)
-				for (int col = 0; col < 3; col++)
+
+			for (int row = 0; row < 2; row++) {
+
+				for (int col = 0; col < 3; col++) {
 					g.fill(new RoundRectangle2D.Double(6 + col * 5, 13 + row * 4, 2, 2, .7, .7));
+				}
+
+			}
+
 		}
 
 		case REPLACEMENTS -> {
@@ -156,6 +164,7 @@ public final class NavigationIcon implements Icon {
 				line(g, 12 + Math.cos(angle) * 7, 12 + Math.sin(angle) * 7, 12 + Math.cos(angle) * 9.5,
 						12 + Math.sin(angle) * 9.5);
 			}
+
 		}
 		}
 
@@ -170,8 +179,10 @@ public final class NavigationIcon implements Icon {
 		Path2D path = new Path2D.Double();
 		path.moveTo(coordinates[0], coordinates[1]);
 
-		for (int i = 2; i < coordinates.length; i += 2)
+		for (int i = 2; i < coordinates.length; i += 2) {
 			path.lineTo(coordinates[i], coordinates[i + 1]);
+		}
+
 		g.draw(path);
 	}
 }

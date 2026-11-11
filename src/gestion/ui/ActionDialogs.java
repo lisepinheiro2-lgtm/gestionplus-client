@@ -7,7 +7,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
+
 import javax.swing.JOptionPane;
+
 import gestion.model.Intervention;
 import gestion.service.PlanningService;
 import gestion.util.DomainValidation;
@@ -28,10 +30,15 @@ public final class ActionDialogs {
 		if (failure instanceof IOException || failure instanceof UncheckedIOException) {
 			message = "L'enregistrement a échoué. L'opération n'a pas été confirmée.";
 
-			for (Throwable cause = failure; cause != null; cause = cause.getCause())
+			for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+
 				if (cause.getMessage() != null && (cause.getMessage().contains("Compensation incomplète")
-						|| cause.getMessage().contains("Récupération incomplète")))
+						|| cause.getMessage().contains("Récupération incomplète"))) {
 					message = "Récupération incomplète : fermez l'application et conservez le journal local avant toute nouvelle modification.";
+				}
+
+			}
+
 		}
 
 		errorHandler.accept(parent, message);
@@ -48,8 +55,9 @@ public final class ActionDialogs {
 		if (!pastAlreadyConfirmed
 				&& candidates.stream()
 						.anyMatch(i -> DomainValidation.intervention(i).start().isBefore(LocalDateTime.now()))
-				&& !confirm(parent, "Une ou plusieurs interventions débutent dans le passé. Voulez-vous continuer ?"))
+				&& !confirm(parent, "Une ou plusieurs interventions débutent dans le passé. Voulez-vous continuer ?")) {
 			return false;
+		}
 
 		boolean clientOverlap = candidates.stream().anyMatch(i -> planning.hasOverlap(i.getClient(), i, ignored));
 

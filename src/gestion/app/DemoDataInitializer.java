@@ -18,16 +18,20 @@ public class DemoDataInitializer {
 
 			Path destination = directory.resolve(fileName);
 
-			if (Files.exists(destination))
+			if (Files.exists(destination)) {
 				continue;
+			}
 
 			try (InputStream source = DemoDataInitializer.class.getResourceAsStream("/demo-data/" + fileName)) {
 
-				if (source == null)
+				if (source == null) {
 					throw new IOException("CSV de démonstration introuvable : " + fileName);
+				}
 
 				Files.copy(source, destination);
 			}
+
 		}
+
 	}
 }

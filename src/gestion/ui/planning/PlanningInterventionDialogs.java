@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
+import java.util.List;
 
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -24,9 +25,8 @@ import gestion.service.ClientService;
 import gestion.service.PersonnelService;
 import gestion.service.PlanningService;
 import gestion.service.RecurringInterventionService;
-import gestion.util.FormatUtils;
 import gestion.ui.ActionDialogs;
-import java.util.List;
+import gestion.util.FormatUtils;
 
 public final class PlanningInterventionDialogs {
 
@@ -99,6 +99,7 @@ public final class PlanningInterventionDialogs {
 			if (confirmation != JOptionPane.YES_OPTION) {
 				return;
 			}
+
 		}
 
 		while (true) {
@@ -148,8 +149,10 @@ public final class PlanningInterventionDialogs {
 				int index = planning.getInterventions().indexOf(intervention);
 
 				if (!ActionDialogs.confirmSaving(parent, planning, List.of(modifiedIntervention), intervention,
-						!interventionEnd.isAfter(LocalDateTime.now())))
+						!interventionEnd.isAfter(LocalDateTime.now()))) {
 					return;
+				}
+
 				planning.editIntervention(index, selectedClient, selectedEmployee, startDate, startTime, endDate,
 						endTime);
 				onChange.run();
@@ -163,7 +166,9 @@ public final class PlanningInterventionDialogs {
 			} catch (IllegalArgumentException e) {
 				JOptionPane.showMessageDialog(parent, e.getMessage());
 			}
+
 		}
+
 	}
 
 	public void openAddInterventionChoice(LocalDate initialDate, LocalTime initialTime) {
@@ -179,6 +184,7 @@ public final class PlanningInterventionDialogs {
 		} else {
 			return;
 		}
+
 	}
 
 	public void openAddRecurringIntervention(LocalDate initialDate, LocalTime initialTime) {
@@ -206,7 +212,8 @@ public final class PlanningInterventionDialogs {
 		endDateField.setText(FormatUtils.formatDate(initialDate));
 		dayBox.setSelectedIndex(initialDate.getDayOfWeek().getValue() - 1);
 		endTimeField.setToolTipText("Si la fin précède le début, l'intervention se termine le lendemain.");
-		endDateField.setToolTipText("Dernier jour de départ possible des occurrences, y compris celles finissant le lendemain.");
+		endDateField.setToolTipText(
+				"Dernier jour de départ possible des occurrences, y compris celles finissant le lendemain.");
 
 		if (initialTime != null) {
 			startTimeField.setText(FormatUtils.formatTime(initialTime));
@@ -273,8 +280,10 @@ public final class PlanningInterventionDialogs {
 						startTime, endTime, startDate, endDate);
 				var preview = planning.previewRecurringInterventions(recurring);
 
-				if (!ActionDialogs.confirmSaving(parent, planning, preview, null, false))
+				if (!ActionDialogs.confirmSaving(parent, planning, preview, null, false)) {
 					return;
+				}
+
 				boolean generated = recurringInterventionList.createWithPlanning(planning, recurring);
 
 				if (!generated) {
@@ -292,7 +301,9 @@ public final class PlanningInterventionDialogs {
 			} catch (UncheckedIOException | IllegalArgumentException e) {
 				ActionDialogs.error(parent, e);
 			}
+
 		}
+
 	}
 
 	public void openAddIntervention(LocalDate initialDate, LocalTime initialTime) {
@@ -378,8 +389,10 @@ public final class PlanningInterventionDialogs {
 					continue;
 				}
 
-				if (!ActionDialogs.confirmSaving(parent, planning, List.of(intervention), null, false))
+				if (!ActionDialogs.confirmSaving(parent, planning, List.of(intervention), null, false)) {
 					return;
+				}
+
 				planning.addIntervention(intervention);
 				onChange.run();
 				return;
@@ -393,6 +406,8 @@ public final class PlanningInterventionDialogs {
 			} catch (IllegalArgumentException e) {
 				JOptionPane.showMessageDialog(parent, e.getMessage());
 			}
+
 		}
+
 	}
 }

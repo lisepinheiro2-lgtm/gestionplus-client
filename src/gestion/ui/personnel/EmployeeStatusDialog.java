@@ -13,6 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
+
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
@@ -48,7 +49,8 @@ public final class EmployeeStatusDialog {
 		JTextField endTime = new JTextField("24h00", 6);
 		startTime.putClientProperty("JComponent.roundRect", true);
 		endTime.putClientProperty("JComponent.roundRect", true);
-		startTime.setToolTipText("Heure réelle de début, par exemple 14h30 ou 14:30. La partie travaillée avant est conservée.");
+		startTime.setToolTipText(
+				"Heure réelle de début, par exemple 14h30 ou 14:30. La partie travaillée avant est conservée.");
 		endTime.setToolTipText("Heure réelle de fin sur la date de fin. 24h00 signifie la fin de cette journée.");
 		JPanel timing = new JPanel(new GridLayout(2, 2, 6, 6));
 		timing.add(new JLabel("Heure réelle de début :"));
@@ -97,8 +99,9 @@ public final class EmployeeStatusDialog {
 			Object choice = pane.getValue();
 			dialog.dispose();
 
-			if (!Integer.valueOf(JOptionPane.OK_OPTION).equals(choice))
+			if (!Integer.valueOf(JOptionPane.OK_OPTION).equals(choice)) {
 				return false;
+			}
 
 			try {
 				EmployeeStatus selected = (EmployeeStatus) statusBox.getSelectedItem();
@@ -108,8 +111,9 @@ public final class EmployeeStatusDialog {
 							end.getText(), startTime.getText(), endTime.getText());
 					List<AbsenceRelease> releases = controller.previewTimedAbsence(absence);
 
-					if (!confirmTimedAbsence(parent, absence, releases))
+					if (!confirmTimedAbsence(parent, absence, releases)) {
 						continue;
+					}
 
 					controller.declareTimedAbsence(absence, releases);
 				} else {
@@ -126,17 +130,22 @@ public final class EmployeeStatusDialog {
 			} catch (IOException | UncheckedIOException exception) {
 				ActionDialogs.error(parent, exception);
 			}
+
 		}
+
 	}
 
 	private static void resizeDialog(Component form) {
 		Window dialog = SwingUtilities.getWindowAncestor(form);
 
-		if (dialog != null)
+		if (dialog != null) {
 			dialog.pack();
+		}
+
 	}
 
-	private static boolean confirmTimedAbsence(Component parent, EmployeeAbsence absence, List<AbsenceRelease> releases) {
+	private static boolean confirmTimedAbsence(Component parent, EmployeeAbsence absence,
+			List<AbsenceRelease> releases) {
 		DateTimeFormatter format = DateTimeFormatter.ofPattern("dd/MM/uuuu HH'h'mm");
 		String beginning = absence.getStartDate().atTime(absence.getStartTime()).format(format);
 		JPanel content = new JPanel(new BorderLayout(0, 8));
@@ -157,7 +166,8 @@ public final class EmployeeStatusDialog {
 
 			releases.stream().sorted(Comparator.comparing(release -> release.originalPeriod().start()))
 					.forEach(release -> model.addRow(new Object[] { release.client(),
-							formatPeriod(release.originalPeriod(), format), formatPeriod(release.absentPeriod(), format),
+							formatPeriod(release.originalPeriod(), format),
+							formatPeriod(release.absentPeriod(), format),
 							!release.originalPeriod().end().isAfter(now) ? "Terminée"
 									: release.originalPeriod().start().isBefore(now) ? "En cours" : "À venir" }));
 
@@ -173,7 +183,8 @@ public final class EmployeeStatusDialog {
 			content.add(scroll, BorderLayout.CENTER);
 		}
 
-		content.add(new JLabel("Seules les parties indiquées seront désattribuées. Les heures hors de l'absence restent conservées."),
+		content.add(new JLabel(
+				"Seules les parties indiquées seront désattribuées. Les heures hors de l'absence restent conservées."),
 				BorderLayout.SOUTH);
 		UIUtils.applyTheme(content);
 		Object[] options = { "Enregistrer l'absence", "Annuler" };

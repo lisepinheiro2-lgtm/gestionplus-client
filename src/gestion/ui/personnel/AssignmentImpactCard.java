@@ -12,8 +12,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -75,8 +75,11 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 	}
 
 	void showWeeks(List<LocalDate> weeks) {
-		if (weeks.equals(displayedWeeks))
+
+		if (weeks.equals(displayedWeeks)) {
 			return;
+		}
+
 		displayedWeeks = List.copyOf(weeks);
 		rows.removeAll();
 		weeks.stream().map(impacts::get).filter(AssignmentImpactCard::changesHours)
@@ -107,6 +110,7 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 		} finally {
 			g.dispose();
 		}
+
 		super.paintComponent(graphics);
 	}
 
@@ -119,11 +123,13 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 		DateTimeFormatter month = DateTimeFormatter.ofPattern("d MMMM", Locale.FRENCH);
 		DateTimeFormatter year = DateTimeFormatter.ofPattern("d MMMM uuuu", Locale.FRENCH);
 
-		if (start.getYear() != end.getYear())
+		if (start.getYear() != end.getYear()) {
 			return start.format(year) + " – " + end.format(year);
+		}
 
-		if (start.getMonth() != end.getMonth())
+		if (start.getMonth() != end.getMonth()) {
 			return start.format(month) + " – " + end.format(month);
+		}
 
 		return start.getDayOfMonth() + " – " + end.format(month);
 	}
@@ -186,8 +192,11 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 					+ "'>" + FormatUtils.formatContractHours(impact.after()) + " / "
 					+ FormatUtils.formatContractHours(impact.contract()) + "</font></b></html>");
 
-			if (Math.round((impact.after() - impact.before()) * 60) != 0)
-				variation.setForeground(impact.after() > impact.before() ? UIUtils.getTurquoiseColor() : UIUtils.getVioletColor());
+			if (Math.round((impact.after() - impact.before()) * 60) != 0) {
+				variation.setForeground(
+						impact.after() > impact.before() ? UIUtils.getTurquoiseColor() : UIUtils.getVioletColor());
+			}
+
 		}
 	}
 
@@ -197,7 +206,7 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 
 		HoursGauge(Impact impact) {
 			this.impact = impact;
-			
+
 			setPreferredSize(new Dimension(0, 8));
 			String percentage = impact.contract() > 0 ? Math.round(impact.after() * 100 / impact.contract()) + " %"
 					: impact.after() > 0 ? "Hors contrat" : "0 %";
@@ -221,8 +230,9 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 				g.fill(track);
 				double maximum = Math.max(impact.contract(), impact.after());
 
-				if (maximum <= 0)
+				if (maximum <= 0) {
 					return;
+				}
 
 				g.clip(track);
 				g.setColor(UIUtils.getHoursColor(impact.alert()));
@@ -233,9 +243,11 @@ final class AssignmentImpactCard extends JPanel implements AppThemeAware {
 					g.setColor(UIUtils.isDarkMode() ? new Color(32, 35, 40) : Color.WHITE);
 					g.fillRect(limit - 1, y, 3, height);
 				}
+
 			} finally {
 				g.dispose();
 			}
+
 		}
 	}
 }

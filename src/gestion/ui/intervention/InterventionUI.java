@@ -1,15 +1,15 @@
 package gestion.ui.intervention;
 
 import java.awt.BorderLayout;
-import java.io.UncheckedIOException;
-import gestion.ui.ActionDialogs;
 import java.awt.FlowLayout;
+import java.io.UncheckedIOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
+
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -28,9 +28,10 @@ import gestion.service.ClientService;
 import gestion.service.PersonnelService;
 import gestion.service.PlanningService;
 import gestion.service.RecurringInterventionService;
-import gestion.ui.UIUtils;
+import gestion.ui.ActionDialogs;
 import gestion.ui.BadgeRenderer;
 import gestion.ui.NavigationIcon;
+import gestion.ui.UIUtils;
 import gestion.util.FormatUtils;
 
 public class InterventionUI extends JPanel {
@@ -89,7 +90,8 @@ public class InterventionUI extends JPanel {
 		removeRecurringInterventionButton = new JButton("Supprimer une intervention récurrente");
 		searchIcon = new JLabel();
 		searchButton = new JTextField(20);
-		searchButton.putClientProperty("JTextField.placeholderText", "Rechercher un client, un intervenant, une date ou une heure…");
+		searchButton.putClientProperty("JTextField.placeholderText",
+				"Rechercher un client, un intervenant, une date ou une heure…");
 		searchButton.putClientProperty("JTextField.leadingIcon", new com.formdev.flatlaf.icons.FlatSearchIcon());
 		searchButton.getAccessibleContext().setAccessibleName("Rechercher des interventions");
 		previousButton = new JButton();
@@ -127,11 +129,13 @@ public class InterventionUI extends JPanel {
 			public void componentResized(java.awt.event.ComponentEvent event) {
 				java.awt.GridLayout layout = (java.awt.GridLayout) actionsPanel.getLayout();
 				int columns = actionsPanel.getWidth() < 1180 ? 2 : 4;
+
 				if (layout.getColumns() != columns) {
 					layout.setRows(0);
 					layout.setColumns(columns);
 					actionsPanel.revalidate();
 				}
+
 			}
 		});
 		UIUtils.styleActionButton(addInterventionButton, "primary");
@@ -169,14 +173,19 @@ public class InterventionUI extends JPanel {
 			@Override
 			public void componentResized(java.awt.event.ComponentEvent event) {
 				int size = getInterventionsPerPage();
-				if (size == renderedPageSize)
+
+				if (size == renderedPageSize) {
 					return;
+				}
 
 				Intervention selected = getSelectedIntervention();
 				ArrayList<Intervention> displayed = buildDisplayedInterventions();
 				int position = displayed.indexOf(selected);
-				if (position >= 0)
+
+				if (position >= 0) {
 					currentPage = position / size;
+				}
+
 				refreshIntervention(displayed);
 			}
 		});
@@ -229,7 +238,9 @@ public class InterventionUI extends JPanel {
 				if (!searchApplied) {
 					displayedInterventions.removeIf(intervention -> !matchesName(intervention, currentSearchText));
 				}
+
 			}
+
 		}
 
 		String selectedView = (String) viewBox.getSelectedItem();
@@ -306,18 +317,26 @@ public class InterventionUI extends JPanel {
 		}
 
 		boolean changed = UIUtils.updateTableRows(interventionTableModel, rows);
+
 		if (!changed && !previousRows.equals(visibleRows)) {
 			interventionTableModel.fireTableDataChanged();
 			changed = true;
 		}
+
 		if (changed && selected != null) {
 			int index = visibleRows.indexOf(selected);
+
 			if (index >= 0) {
 				int row = interventionTable.convertRowIndexToView(index);
-				if (row >= 0)
+
+				if (row >= 0) {
 					interventionTable.setRowSelectionInterval(row, row);
+				}
+
 			}
+
 		}
+
 		updatePageButtons(displayedInterventions);
 	}
 
@@ -378,8 +397,9 @@ public class InterventionUI extends JPanel {
 		}
 
 		if (!ActionDialogs.confirm(this,
-				"Supprimer les occurrences à venir de cette série ? Les interventions déjà commencées et leur historique seront conservés."))
+				"Supprimer les occurrences à venir de cette série ? Les interventions déjà commencées et leur historique seront conservés.")) {
 			return;
+		}
 
 		try {
 			recurringInterventionList.removeFutureSeries(planning, recurringIdToRemove);
@@ -409,12 +429,16 @@ public class InterventionUI extends JPanel {
 		if (currentPage > endPage) {
 			currentPage = endPage;
 		}
+
 	}
 
 	private Intervention getSelectedIntervention() {
 		int row = interventionTable.getSelectedRow();
-		if (row < 0)
+
+		if (row < 0) {
 			return null;
+		}
+
 		row = interventionTable.convertRowIndexToModel(row);
 		return row < visibleRows.size() ? visibleRows.get(row) : null;
 	}
@@ -434,6 +458,7 @@ public class InterventionUI extends JPanel {
 		} else {
 			return 1;
 		}
+
 	}
 
 	private void resetSearchIfEmpty() {
@@ -443,6 +468,7 @@ public class InterventionUI extends JPanel {
 			currentPage = 0;
 			refreshIntervention();
 		}
+
 	}
 
 	private void previousPage() {

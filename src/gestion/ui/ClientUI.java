@@ -1,27 +1,26 @@
 package gestion.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.io.UncheckedIOException;
-import gestion.ui.ActionDialogs;
-import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import javax.swing.JButton;
+
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
 import gestion.model.Client;
@@ -88,7 +87,6 @@ public class ClientUI extends JPanel {
 
 		addButton.addActionListener(event -> addClient());
 
-
 		add(inputPanel, BorderLayout.NORTH);
 	}
 
@@ -132,11 +130,17 @@ public class ClientUI extends JPanel {
 			public String getToolTipText(java.awt.event.MouseEvent event) {
 				int row = rowAtPoint(event.getPoint());
 				int column = columnAtPoint(event.getPoint());
-				if (row < 0 || column < 0)
+
+				if (row < 0 || column < 0) {
 					return null;
+				}
+
 				java.awt.Rectangle cell = getCellRect(row, column, true);
-				if (convertColumnIndexToModel(column) == 5 && event.getX() >= cell.x + cell.width - 30)
+
+				if (convertColumnIndexToModel(column) == 5 && event.getX() >= cell.x + cell.width - 30) {
 					return "Supprimer ce client — confirmation et protections conservées";
+				}
+
 				Object value = getValueAt(row, column);
 				return value == null ? null : value.toString();
 			}
@@ -145,8 +149,9 @@ public class ClientUI extends JPanel {
 			public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
 				Component component = super.prepareRenderer(renderer, row, column);
 
-				if (component instanceof JLabel label && convertColumnIndexToModel(column) != 5)
+				if (component instanceof JLabel label && convertColumnIndexToModel(column) != 5) {
 					label.setBorder(BorderFactory.createEmptyBorder(1, 8, 1, 8));
+				}
 
 				return component;
 			}
@@ -174,14 +179,19 @@ public class ClientUI extends JPanel {
 			public void mouseClicked(java.awt.event.MouseEvent event) {
 				int row = clientTable.rowAtPoint(event.getPoint());
 				int column = clientTable.columnAtPoint(event.getPoint());
+
 				if (!javax.swing.SwingUtilities.isLeftMouseButton(event) || event.getClickCount() != 1
-						|| row < 0 || column < 0 || clientTable.convertColumnIndexToModel(column) != 5)
+						|| row < 0 || column < 0 || clientTable.convertColumnIndexToModel(column) != 5) {
 					return;
+				}
+
 				java.awt.Rectangle cell = clientTable.getCellRect(row, column, true);
+
 				if (event.getX() >= cell.x + cell.width - 30) {
 					clientTable.setRowSelectionInterval(row, row);
 					removeClient();
 				}
+
 			}
 		});
 		clientTable.getInputMap().put(javax.swing.KeyStroke.getKeyStroke("DELETE"), "removeClient");
@@ -193,10 +203,12 @@ public class ClientUI extends JPanel {
 		});
 		clientTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
 		int[] widths = { 130, 130, 310, 115, 140, 160 };
+
 		for (int column = 0; column < widths.length; column++) {
 			clientTable.getColumnModel().getColumn(column).setPreferredWidth(widths[column]);
 			clientTable.getColumnModel().getColumn(column).setMinWidth(column == 2 ? 190 : column >= 4 ? 130 : 95);
 		}
+
 		clientTable.getTableHeader().setDefaultRenderer(new DefaultTableCellRenderer() {
 			@Override
 			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
@@ -219,7 +231,8 @@ public class ClientUI extends JPanel {
 
 	private void loadTable() {
 		int selectedRow = clientTable.getSelectedRow();
-		Client selected = selectedRow < 0 ? null : displayedClients.get(clientTable.convertRowIndexToModel(selectedRow));
+		Client selected = selectedRow < 0 ? null
+				: displayedClients.get(clientTable.convertRowIndexToModel(selectedRow));
 		java.util.List<Object[]> rows = new java.util.ArrayList<>();
 		java.util.List<Client> previousRows = new java.util.ArrayList<>(displayedClients);
 		displayedClients.clear();
@@ -231,6 +244,7 @@ public class ClientUI extends JPanel {
 			if (client.getContractStartDate() != null) {
 				startDate = FormatUtils.formatDate(client.getContractStartDate());
 			}
+
 			if (client.getContractEndDate() != null) {
 				endDate = FormatUtils.formatDate(client.getContractEndDate());
 			}
@@ -243,18 +257,26 @@ public class ClientUI extends JPanel {
 		}
 
 		boolean changed = UIUtils.updateTableRows(tableModel, rows);
+
 		if (!changed && !previousRows.equals(displayedClients)) {
 			tableModel.fireTableDataChanged();
 			changed = true;
 		}
+
 		if (changed && selected != null) {
 			int index = displayedClients.indexOf(selected);
+
 			if (index >= 0) {
 				int row = clientTable.convertRowIndexToView(index);
-				if (row >= 0)
+
+				if (row >= 0) {
 					clientTable.setRowSelectionInterval(row, row);
+				}
+
 			}
+
 		}
+
 	}
 
 	private void addClient() {
@@ -282,6 +304,7 @@ public class ClientUI extends JPanel {
 			if (!startDateText.isBlank() && !startDateText.equals("jj/MM/aaaa")) {
 				contractStartDate = FormatUtils.parseDate(startDateText);
 			}
+
 			if (!endDateText.isBlank() && !endDateText.equals("jj/MM/aaaa")) {
 				contractEndDate = FormatUtils.parseDate(endDateText);
 			}
@@ -304,6 +327,7 @@ public class ClientUI extends JPanel {
 		} catch (DateTimeParseException e) {
 			JOptionPane.showMessageDialog(this, "Format invalide. Heures : 120 ou 120,5. Date : 05/03/2027.");
 		}
+
 	}
 
 	private void removeClient() {
@@ -315,17 +339,25 @@ public class ClientUI extends JPanel {
 		}
 
 		try {
-			if (!ActionDialogs.confirm(this, "Supprimer le client sélectionné ? Les clients encore référencés restent protégés."))
+
+			if (!ActionDialogs.confirm(this,
+					"Supprimer le client sélectionné ? Les clients encore référencés restent protégés.")) {
 				return;
+			}
+
 			Client client = displayedClients.get(clientTable.convertRowIndexToModel(index));
 			int position = clients.getClients().indexOf(client);
-			if (position < 0)
+
+			if (position < 0) {
 				throw new IllegalArgumentException("Ce client n'existe plus.");
+			}
+
 			clients.removeClient(position);
 			refreshTable();
 		} catch (UncheckedIOException | IllegalArgumentException e) {
 			ActionDialogs.error(this, e);
 		}
+
 	}
 
 	public void refreshTable() {

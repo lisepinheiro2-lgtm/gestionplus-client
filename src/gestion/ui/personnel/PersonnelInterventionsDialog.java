@@ -24,8 +24,8 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JToggleButton;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
@@ -96,6 +96,7 @@ public class PersonnelInterventionsDialog {
 			availability.stop();
 			searchDelay.stop();
 		}
+
 	}
 
 	private void refreshAvailability() {
@@ -103,14 +104,19 @@ public class PersonnelInterventionsDialog {
 		refreshing = true;
 
 		try {
-			for (PersonnelInterventionsTable table : tables)
+
+			for (PersonnelInterventionsTable table : tables) {
 				changed |= table.hideStartedInterventions();
+			}
+
 		} finally {
 			refreshing = false;
 		}
 
-		if (changed)
+		if (changed) {
 			updateImpact();
+		}
+
 	}
 
 	private JPanel createContent(boolean assignedHours) {
@@ -129,12 +135,18 @@ public class PersonnelInterventionsDialog {
 			int tab = index;
 			tables[index] = new PersonnelInterventionsTable(planning, index == 2, index != 1);
 			tables[index].getSelectionModel().addListSelectionListener(event -> {
-				if (!event.getValueIsAdjusting() && !refreshing && tab == activeTab)
+
+				if (!event.getValueIsAdjusting() && !refreshing && tab == activeTab) {
 					requestImpact();
+				}
+
 			});
 			tables[index].getRowSorter().addRowSorterListener(event -> {
-				if (!refreshing && tab == activeTab)
+
+				if (!refreshing && tab == activeTab) {
 					requestImpact();
+				}
+
 			});
 			JScrollPane scroll = new JScrollPane(tables[index]);
 			scroll.setColumnHeaderView(tables[index].getTableHeader());
@@ -210,19 +222,27 @@ public class PersonnelInterventionsDialog {
 	}
 
 	private void requestImpact() {
-		if (refreshing || impactPending)
+
+		if (refreshing || impactPending) {
 			return;
+		}
+
 		impactPending = true;
 		SwingUtilities.invokeLater(() -> {
 			impactPending = false;
-			if (dialog == null || dialog.isDisplayable())
+
+			if (dialog == null || dialog.isDisplayable()) {
 				updateImpact();
+			}
+
 		});
 	}
 
 	private void updateImpact() {
-		if (impact == null)
+
+		if (impact == null) {
 			return;
+		}
 
 		List<Intervention> selected = tables[activeTab].selectedInterventions();
 		impact.showImpact(selected, destination(), period, "occurrences sélectionnées");
@@ -245,7 +265,8 @@ public class PersonnelInterventionsDialog {
 			tables[1].showInterventions(matching.stream()
 					.filter(intervention -> intervention.getEmployee() == employee).toList());
 			tables[2].showInterventions(matching.stream()
-					.filter(intervention -> intervention.getEmployee() != null && intervention.getEmployee() != employee)
+					.filter(intervention -> intervention.getEmployee() != null
+							&& intervention.getEmployee() != employee)
 					.toList());
 		} finally {
 			refreshing = false;
@@ -257,7 +278,8 @@ public class PersonnelInterventionsDialog {
 	private List<Intervention> matchingInterventions() {
 		String query = search.getText().strip();
 		List<Intervention> source = query.isEmpty()
-				? planning.getInterventionsForPeriod(period) : planning.getInterventions();
+				? planning.getInterventionsForPeriod(period)
+				: planning.getInterventions();
 		LocalDateTime now = LocalDateTime.now();
 		var filter = InterventionSearch.filter(query);
 
@@ -272,16 +294,18 @@ public class PersonnelInterventionsDialog {
 		refreshTables();
 		List<Intervention> selected = tables[activeTab].selectedInterventions();
 
-		if (selected.isEmpty())
+		if (selected.isEmpty()) {
 			return;
+		}
 
 		try {
 			Plan initial = assignments.preview(selected, destination(), false);
 			boolean recurring = selected.stream().anyMatch(i -> i.getRecurringId() != null);
 			Plan plan = recurring ? reviewSelection(selected) : initial;
 
-			if (plan == null)
+			if (plan == null) {
 				return;
+			}
 
 			assignments.apply(plan);
 			onChange.run();
@@ -295,12 +319,14 @@ public class PersonnelInterventionsDialog {
 					"La sauvegarde a échoué. Aucun changement du lot n'a été conservé.",
 					"Échec de l'opération", JOptionPane.ERROR_MESSAGE);
 		}
+
 	}
 
 	private Plan reviewSelection(List<Intervention> selected) {
 		boolean recurring = selected.stream().anyMatch(i -> i.getRecurringId() != null);
 		JDialog warning = new JDialog(dialog, recurring
-				? "Interventions récurrentes — choix obligatoire" : "Conflits d'attribution", true);
+				? "Interventions récurrentes — choix obligatoire"
+				: "Conflits d'attribution", true);
 		warning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		Plan[] result = { null };
 		AssignmentReviewPanel review = new AssignmentReviewPanel(assignments, hours, selected, destination(), period,

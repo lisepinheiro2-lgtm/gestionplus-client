@@ -42,5 +42,6 @@ public final class Main {
 					"Impossible de charger les données : " + exception.getMessage(), "Erreur de lecture",
 					JOptionPane.ERROR_MESSAGE));
 		}
+
 	}
 }

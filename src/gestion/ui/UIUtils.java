@@ -5,8 +5,8 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -28,11 +28,9 @@ import javax.swing.JTextField;
 import javax.swing.JViewport;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.plaf.basic.BasicButtonUI;
-import javax.swing.plaf.basic.BasicComboBoxUI;
 import javax.swing.text.JTextComponent;
+
 import gestion.model.EmployeeStatus;
-import java.awt.Graphics2D;
 import gestion.model.HoursAlert;
 
 public class UIUtils {
@@ -45,16 +43,25 @@ public class UIUtils {
 	}
 
 	public static void installLookAndFeel() {
+
 		if (darkMode) {
 			com.formdev.flatlaf.FlatDarkLaf.setup();
 		} else {
 			com.formdev.flatlaf.FlatLightLaf.setup();
 		}
+
 		javax.swing.UIManager.put("defaultFont", new java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13));
-		for (String key : new String[] { "Panel.background", "OptionPane.background", "Viewport.background", "Table.background" })
+
+		for (String key : new String[] { "Panel.background", "OptionPane.background", "Viewport.background",
+				"Table.background" }) {
 			javax.swing.UIManager.put(key, getBackgroundColor());
-		for (String key : new String[] { "Button.background", "ToggleButton.background", "TextField.background", "ComboBox.background" })
+		}
+
+		for (String key : new String[] { "Button.background", "ToggleButton.background", "TextField.background",
+				"ComboBox.background" }) {
 			javax.swing.UIManager.put(key, getSurfaceColor());
+		}
+
 		javax.swing.UIManager.put("Table.alternateRowColor", new Color(darkMode ? 0x1D2735 : 0xEDF3FA));
 		javax.swing.UIManager.put("Component.borderColor", getBorderColor());
 		javax.swing.UIManager.put("Component.focusColor", getTurquoiseColor());
@@ -63,8 +70,10 @@ public class UIUtils {
 	}
 
 	public static void setDarkMode(boolean enabled) {
-		if (darkMode == enabled)
+
+		if (darkMode == enabled) {
 			return;
+		}
 
 		darkMode = enabled;
 		preferences.putBoolean("darkMode", darkMode);
@@ -76,6 +85,7 @@ public class UIUtils {
 			window.revalidate();
 			window.repaint();
 		}
+
 	}
 
 	public static void addPlaceholder(JTextField field, String placeholder) {
@@ -85,17 +95,21 @@ public class UIUtils {
 		field.addFocusListener(new FocusAdapter() {
 
 			public void focusGained(FocusEvent e) {
+
 				if (field.getText().equals(placeholder)) {
 					field.setText("");
 					field.setForeground(getTextColor());
 				}
+
 			}
 
 			public void focusLost(FocusEvent e) {
+
 				if (field.getText().isBlank()) {
 					field.setText(placeholder);
 					field.setForeground(getPlaceholderColor());
 				}
+
 			}
 		});
 	}
@@ -121,6 +135,7 @@ public class UIUtils {
 	}
 
 	public static Color getBackgroundColor() {
+
 		if (darkMode) {
 			return new Color(23, 30, 42);
 		}
@@ -129,6 +144,7 @@ public class UIUtils {
 	}
 
 	public static Color getTextColor() {
+
 		if (darkMode) {
 			return new Color(237, 242, 249);
 		}
@@ -137,6 +153,7 @@ public class UIUtils {
 	}
 
 	public static Color getPlaceholderColor() {
+
 		if (darkMode) {
 			return new Color(159, 174, 194);
 		}
@@ -173,7 +190,7 @@ public class UIUtils {
 		button.putClientProperty("JButton.buttonType", null);
 		Color accent = "primary".equals(tone) ? getTurquoiseColor()
 				: "danger".equals(tone) ? getVioletColor()
-				: "warning".equals(tone) ? getChampagneColor() : getTextColor();
+						: "warning".equals(tone) ? getChampagneColor() : getTextColor();
 		button.putClientProperty("FlatLaf.style", "arc:14;margin:6,12,6,12;borderWidth:1;focusWidth:1;"
 				+ "innerFocusWidth:0;background:" + hex(getSurfaceColor()) + ";foreground:" + hex(accent)
 				+ ";borderColor:" + hex("neutral".equals(tone) ? getBorderColor() : accent)
@@ -184,11 +201,18 @@ public class UIUtils {
 		String label = button.getText() == null ? "" : button.getText();
 		NavigationIcon.Kind kind = label.startsWith("Ajouter") ? NavigationIcon.Kind.ADD
 				: label.startsWith("Supprimer") ? NavigationIcon.Kind.DELETE
-				: label.startsWith("Attribuer") || label.startsWith("Réattribuer") ? NavigationIcon.Kind.REPLACEMENTS : null;
-		if (button.getClientProperty("gestion.icon") instanceof NavigationIcon.Kind explicit)
+						: label.startsWith("Attribuer") || label.startsWith("Réattribuer")
+								? NavigationIcon.Kind.REPLACEMENTS
+								: null;
+
+		if (button.getClientProperty("gestion.icon") instanceof NavigationIcon.Kind explicit) {
 			kind = explicit;
-		if (kind != null)
+		}
+
+		if (kind != null) {
 			button.setIcon(new NavigationIcon(kind, 18, accent));
+		}
+
 	}
 
 	public static void styleInterventionButton(JButton button, boolean assigned) {
@@ -226,6 +250,7 @@ public class UIUtils {
 			if (result == JOptionPane.OK_OPTION) {
 				setDarkMode(darkModeBox.isSelected());
 			}
+
 		});
 
 		return settingsButton;
@@ -233,21 +258,27 @@ public class UIUtils {
 
 	public static void applyTheme(Component component) {
 		String type = component.getClass().getName();
-		if (type.startsWith("com.formdev.flatlaf.ui.") || type.startsWith("javax.swing.plaf."))
+
+		if (type.startsWith("com.formdev.flatlaf.ui.") || type.startsWith("javax.swing.plaf.")) {
 			return;
+		}
 
 		if (component instanceof AppThemeAware themed) {
 			themed.applyAppTheme(darkMode);
 			return;
 		}
 
-		if (component instanceof JPanel || component instanceof JViewport)
+		if (component instanceof JPanel || component instanceof JViewport) {
 			component.setBackground(getBackgroundColor());
+		}
 
 		if (component instanceof javax.swing.JComponent styled) {
 			Object title = styled.getClientProperty("gestion.panelTitle");
-			if (title instanceof String text)
+
+			if (title instanceof String text) {
 				styled.setBorder(panelBorder(text));
+			}
+
 		}
 
 		if (component instanceof JComboBox<?> comboBox) {
@@ -272,30 +303,36 @@ public class UIUtils {
 			list.setSelectionForeground(getTextColor());
 		}
 
-		if (component instanceof JLabel)
+		if (component instanceof JLabel) {
 			component.setForeground(getTextColor());
+		}
 
 		if (component instanceof JButton button) {
 			Object assigned = button.getClientProperty("interventionAssigned");
+
 			if (assigned instanceof Boolean value) {
 				styleInterventionButton(button, value);
 			} else {
 				Object tone = button.getClientProperty("gestion.tone");
 				String label = button.getText() == null ? "" : button.getText();
 				String defaultTone = label.startsWith("Supprimer") || label.equals("Désattribuer") ? "danger"
-						: label.startsWith("Ajouter") || label.startsWith("Attribuer") || label.startsWith("Réattribuer")
-						|| label.contains("confirmer") || label.equals("Confirmer") ? "primary" : "neutral";
+						: label.startsWith("Ajouter") || label.startsWith("Attribuer")
+								|| label.startsWith("Réattribuer")
+								|| label.contains("confirmer") || label.equals("Confirmer") ? "primary" : "neutral";
 				styleActionButton(button, tone instanceof String text ? text : defaultTone);
 			}
+
 		}
 
 		if (component instanceof javax.swing.JToggleButton toggle
 				&& !(toggle instanceof JCheckBox) && !(toggle instanceof javax.swing.JRadioButton)) {
 			styleActionButton(toggle, toggle.isSelected() ? "primary" : "neutral");
+
 			if (toggle.getClientProperty("gestion.selectionStyle") == null) {
 				toggle.putClientProperty("gestion.selectionStyle", true);
 				toggle.addItemListener(event -> styleActionButton(toggle, toggle.isSelected() ? "primary" : "neutral"));
 			}
+
 		}
 
 		if (component instanceof JTable table) {
@@ -314,25 +351,36 @@ public class UIUtils {
 			table.getTableHeader().setPreferredSize(new Dimension(0, 32));
 		}
 
-		if (component instanceof javax.swing.JScrollPane scroll)
+		if (component instanceof javax.swing.JScrollPane scroll) {
 			scroll.setBorder(javax.swing.BorderFactory.createLineBorder(getBorderColor(), 1, true));
+		}
 
-		if (component instanceof Container container)
-			for (Component child : container.getComponents())
+		if (component instanceof Container container) {
+
+			for (Component child : container.getComponents()) {
 				applyTheme(child);
+			}
+
+		}
+
 	}
 
 	@SuppressWarnings("rawtypes")
 	public static boolean updateTableRows(javax.swing.table.DefaultTableModel model, java.util.List<Object[]> rows) {
 		java.util.Vector<java.util.Vector> updated = new java.util.Vector<>(rows.size());
+
 		for (Object[] row : rows) {
-			if (row.length != model.getColumnCount())
+
+			if (row.length != model.getColumnCount()) {
 				throw new IllegalArgumentException("Nombre de colonnes incohérent.");
+			}
+
 			updated.add(new java.util.Vector<>(java.util.Arrays.asList(row)));
 		}
 
-		if (model.getDataVector().equals(updated))
+		if (model.getDataVector().equals(updated)) {
 			return false;
+		}
 
 		model.getDataVector().clear();
 		model.getDataVector().addAll(updated);
@@ -343,12 +391,19 @@ public class UIUtils {
 	public static void configureTableViewport(JTable table, javax.swing.JScrollPane scroll) {
 		Runnable resize = () -> {
 			int minimum = 0;
-			for (int column = 0; column < table.getColumnCount(); column++)
+
+			for (int column = 0; column < table.getColumnCount(); column++) {
 				minimum += table.getColumnModel().getColumn(column).getMinWidth();
+			}
+
 			int mode = scroll.getViewport().getWidth() >= minimum
-					? JTable.AUTO_RESIZE_ALL_COLUMNS : JTable.AUTO_RESIZE_OFF;
-			if (table.getAutoResizeMode() != mode)
+					? JTable.AUTO_RESIZE_ALL_COLUMNS
+					: JTable.AUTO_RESIZE_OFF;
+
+			if (table.getAutoResizeMode() != mode) {
 				table.setAutoResizeMode(mode);
+			}
+
 		};
 		scroll.getViewport().addComponentListener(new ComponentAdapter() {
 			@Override
@@ -377,6 +432,7 @@ public class UIUtils {
 						- getInsets().left - getInsets().right - 4;
 
 				for (Component component : comboBox.getComponents()) {
+
 					if (component instanceof JButton) {
 						availableWidth -= component.getWidth();
 					}
@@ -473,16 +529,18 @@ public class UIUtils {
 
 	public static void paintInnerGlow(Graphics2D g, Color color, int width, int height) {
 
-		if (color == null)
+		if (color == null) {
 			return;
+		}
 
 		int x = 6;
 		int y = 3;
 		int glowWidth = width - 12;
 		int glowHeight = height - 6;
 
-		if (glowWidth <= 10 || glowHeight <= 10)
+		if (glowWidth <= 10 || glowHeight <= 10) {
 			return;
+		}
 
 		g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 20));
 		g.fillRoundRect(x, y, glowWidth, glowHeight, 16, 16);
@@ -492,5 +550,6 @@ public class UIUtils {
 			g.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 60 - i * 12));
 			g.drawRoundRect(x + i, y + i, glowWidth - 2 * i - 1, glowHeight - 2 * i - 1, 16, 16);
 		}
+
 	}
 }

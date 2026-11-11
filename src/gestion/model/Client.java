@@ -1,8 +1,8 @@
 package gestion.model;
 
 import java.time.LocalDate;
-import java.util.UUID;
 import java.util.Objects;
+import java.util.UUID;
 
 public class Client {
 
