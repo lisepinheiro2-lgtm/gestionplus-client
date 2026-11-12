@@ -11,3 +11,6 @@ workShifts.csv
 
 # Profil local de recette fictive, hors publication.
 /GESTION_ESSAI_FICTIF.launch
+
+# Consignes pour agent de code (stockees en gist secret, hors depot)
+AGENTS.md
