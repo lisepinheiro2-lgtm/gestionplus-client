@@ -28,16 +28,19 @@ def run(args,name,cwd=build):
     if result.returncode: sys.exit(result.returncode)
 
 run([jdk/'javac.exe','--release','25','-encoding','UTF-8','--module-path',project/'lib','-d',production,*sorted((project/'src').rglob('*.java'))],'compilation-production')
-shutil.copytree(project/'src'/'icons',production/'icons',dirs_exist_ok=True)
+for resource in ('icons','demo-data'):
+    shutil.copytree(project/'src'/resource,production/resource,dirs_exist_ok=True)
 cp=os.pathsep.join(map(str,[production,*libs,*testjars]))
 runner=build/'JunitRunner.java'
 runner.write_text('''package gestionTest.runner;
 import org.junit.platform.launcher.core.*;
 import org.junit.platform.launcher.listeners.*;
+import org.junit.platform.launcher.TagFilter;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 public class JunitRunner {
     public static void main(String[] args) {
         var request = LauncherDiscoveryRequestBuilder.request();
+        if (java.awt.GraphicsEnvironment.isHeadless()) request.filters(TagFilter.excludeTags("desktop"));
         for (String name : args) request.selectors(DiscoverySelectors.selectClass(name));
         var listener = new SummaryGeneratingListener();
         LauncherFactory.create().execute(request.build(), listener);
@@ -56,13 +59,13 @@ for path in sorted((project/'test').rglob('*Test.java')):
     classes.append(package+'.'+path.stem)
 props=['-Djava.awt.headless=true','-Duser.timezone=Europe/Paris','-Djava.io.tmpdir='+str(temporary),'-Djava.util.prefs.PreferencesFactory=gestionTest.support.InMemoryPreferencesFactory',
        '-Dtest.classes='+str(tests),'-Dtest.production='+str(production),'-Dtest.libs='+os.pathsep.join(map(str,libs))]
-run([jdk/'java.exe',*props,'-cp',os.pathsep.join([str(tests),cp]),'gestionTest.runner.JunitRunner',*classes],'junit-classpath')
+run([jdk/'java.exe',*props,'--enable-native-access=ALL-UNNAMED','-cp',os.pathsep.join([str(tests),cp]),'gestionTest.runner.JunitRunner',*classes],'junit-classpath')
 opens=[]
 packages=set()
 for path in (project/'test').rglob('*.java'):
     packages.add(next(line.split()[1].rstrip(';') for line in path.read_text(encoding='utf-8-sig').splitlines() if line.startswith('package ')))
 for package in packages: opens += ['--add-opens','gestionRemplacement/'+package+'=ALL-UNNAMED']
-run([jdk/'java.exe',*props,'--module-path',os.pathsep.join(map(str,[production,*libs])),
+run([jdk/'java.exe',*props,'--enable-native-access=com.formdev.flatlaf','--module-path',os.pathsep.join(map(str,[production,*libs])),
      '--patch-module','gestionRemplacement='+str(tests),'--add-reads','gestionRemplacement=ALL-UNNAMED',
      '--add-exports','gestionRemplacement/gestionTest.support=java.prefs',
      *opens,'-cp',os.pathsep.join(map(str,testjars)),'-m','gestionRemplacement/gestionTest.runner.JunitRunner',*classes],'junit-module')

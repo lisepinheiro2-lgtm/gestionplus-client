@@ -7,4 +7,5 @@ module gestionRemplacement {
 	requires com.github.weisj.jsvg;
 	requires java.prefs;
 	requires java.logging;
+	opens gestion.net to com.fasterxml.jackson.databind;
 }

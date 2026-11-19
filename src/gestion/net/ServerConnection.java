@@ -9,6 +9,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ServerConnection {
@@ -24,7 +25,6 @@ public class ServerConnection {
 				.build();
 		base = System.getProperty("gestionplus.server.url", "http://localhost:8080");
 		mapper = new ObjectMapper();
-
 	}
 
 	public CsrfToken fetchCsrfToken() throws IOException, InterruptedException {
@@ -52,6 +52,7 @@ public class ServerConnection {
 		return csrfToken;
 	}
 
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record CsrfToken(String headerName, String token) {
 	}
 }
