@@ -3,11 +3,11 @@ package gestion.net;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.CookiePolicy;
-import java.net.http.HttpClient;
-import java.time.Duration;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

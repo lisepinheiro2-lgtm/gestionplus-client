@@ -248,9 +248,11 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 	}
 
 	public void showSubmitting() {
+
 		if (isDisplayable()) {
 			setDisplayState(DisplayState.SUBMITTING, "Connexion en cours…");
 		}
+
 	}
 
 	public void showAuthenticationRejected() {
@@ -269,10 +271,12 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 	}
 
 	public void showSuccess() {
+
 		if (isDisplayable()) {
 			clearSensitiveFields();
 			setDisplayState(DisplayState.SUCCESS, "Connexion réussie.");
 		}
+
 	}
 
 	@Override
@@ -310,6 +314,7 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 	}
 
 	private void submitLogin() {
+
 		if (loginAction == null || displayState == DisplayState.SUBMITTING || displayState == DisplayState.SUCCESS) {
 			return;
 		}
@@ -358,7 +363,8 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 
 	private void resetDisplay() {
 		setDisplayState(loginAction == null ? DisplayState.UNAVAILABLE : DisplayState.READY,
-				loginAction == null ? "La connexion n’est pas encore disponible." : "Saisissez vos informations de connexion.");
+				loginAction == null ? "La connexion n’est pas encore disponible."
+						: "Saisissez vos informations de connexion.");
 	}
 
 	private void setDisplayState(DisplayState state, String message) {
