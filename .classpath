@@ -22,4 +22,13 @@
 	<classpathentry kind="lib" path="lib/jsvg-2.1.0.jar">
 		<attributes><attribute name="module" value="true"/></attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/jackson-core-2.23.0.jar">
+		<attributes><attribute name="module" value="true"/></attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/jackson-annotations-2.23.jar">
+		<attributes><attribute name="module" value="true"/></attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="lib/jackson-databind-2.23.0.jar">
+		<attributes><attribute name="module" value="true"/></attributes>
+	</classpathentry>
 </classpath>
