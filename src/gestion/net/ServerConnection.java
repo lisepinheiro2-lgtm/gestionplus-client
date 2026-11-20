@@ -12,36 +12,56 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
-public class ServerConnection {
+public class ServerConnection implements AutoCloseable {
 
 	private final HttpClient http;
-	private final String base;
+	private final URI base;
+	private final CookieManager cookies;
 	private final ObjectMapper mapper;
+	private final AtomicBoolean closed = new AtomicBoolean();
 
 	public ServerConnection() {
+		this(URI.create(System.getProperty("gestionplus.server.url", "http://localhost:8080")));
+	}
+
+	public ServerConnection(URI base) {
+		this.base = validateBase(base);
+		cookies = new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER) {
+			@Override
+			public synchronized void put(URI uri, Map<String, List<String>> headers) throws IOException {
+				if (!closed.get()) {
+					super.put(uri, headers);
+				}
+			}
+		};
 		http = HttpClient.newBuilder()
-				.cookieHandler(new CookieManager(null, CookiePolicy.ACCEPT_ORIGINAL_SERVER))
+				.cookieHandler(cookies)
 				.connectTimeout(Duration.ofSeconds(5))
+				.followRedirects(HttpClient.Redirect.NEVER)
 				.build();
-		base = System.getProperty("gestionplus.server.url", "http://localhost:8080");
-		mapper = new ObjectMapper();
+		mapper = new ObjectMapper().registerModule(new JavaTimeModule())
+				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 	}
 
 	public CsrfToken fetchCsrfToken() throws IOException, InterruptedException {
 
-		URI endpoint = URI.create(base + "/api/auth/csrf");
+		URI endpoint = endpoint("/api/auth/csrf");
 		HttpRequest request = HttpRequest.newBuilder(endpoint).GET().timeout(Duration.ofSeconds(5)).build();
 		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
 		int status = response.statusCode();
 
 		if (status != 200) {
-			throw new IOException("Erreur HTTP : " + status);
+			throw apiFailure(response);
 		}
 
 		String json = response.body();
@@ -55,6 +75,12 @@ public class ServerConnection {
 			throw new IOException("Nom de l'en-tête CSRF manquant ou vide.");
 		}
 
+		try {
+			HttpRequest.newBuilder().header(csrfToken.headerName(), csrfToken.token());
+		} catch (IllegalArgumentException failure) {
+			throw new IOException("En-tête CSRF invalide.");
+		}
+
 		return csrfToken;
 	}
 
@@ -66,24 +92,14 @@ public class ServerConnection {
 			HttpRequest request = buildLoginRequest(csrfToken, formBody);
 			HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
 
-			switch (response.statusCode()) {
-			case 200:
+			if (response.statusCode() == 200) {
 				return fetchCurrentUser().map(user -> new LoginResult(LoginStatus.AUTHENTICATED, user))
 						.orElseGet(() -> new LoginResult(LoginStatus.REJECTED, null));
-
-			case 401:
-				return new LoginResult(LoginStatus.REJECTED, null);
-
-			case 403:
-				return new LoginResult(LoginStatus.CSRF_REJECTED, null);
-
-			case 503:
-				return new LoginResult(LoginStatus.UNAVAILABLE, null);
-
-			default:
-				return new LoginResult(LoginStatus.FAILED, null);
 			}
 
+			throw apiFailure(response);
+		} catch (HttpApiException failure) {
+			return new LoginResult(loginStatus(failure), null);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			return new LoginResult(LoginStatus.FAILED, null);
@@ -95,7 +111,7 @@ public class ServerConnection {
 
 	public Optional<String> fetchCurrentUser() throws IOException, InterruptedException {
 
-		URI endpoint = URI.create(base + "/api/auth/me");
+		URI endpoint = endpoint("/api/auth/me");
 		HttpRequest request = HttpRequest.newBuilder(endpoint).GET().timeout(Duration.ofSeconds(5)).build();
 		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
 		int status = response.statusCode();
@@ -105,7 +121,7 @@ public class ServerConnection {
 		}
 
 		if (status != 200) {
-			throw new IOException("Erreur HTTP : " + status);
+			throw apiFailure(response);
 		}
 
 		String json = response.body();
@@ -118,12 +134,59 @@ public class ServerConnection {
 		return Optional.of(currentUser.userName());
 	}
 
-	private HttpRequest buildLoginRequest(CsrfToken csrfToken, String formBody) {
+	public SessionExpiration fetchSessionExpiration() throws IOException, InterruptedException {
+		HttpRequest request = HttpRequest.newBuilder(endpoint("/api/auth/session"))
+				.GET().timeout(Duration.ofSeconds(5)).build();
+		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		if (response.statusCode() != 200) {
+			throw apiFailure(response);
+		}
+		SessionExpiration expiration = mapper.readValue(response.body(), SessionExpiration.class);
+		if (expiration == null) {
+			throw new IOException("Réponse d'échéance de session invalide.");
+		}
+		return expiration;
+	}
+
+	public void logout() throws IOException, InterruptedException {
+		CsrfToken csrfToken;
+		try {
+			csrfToken = fetchCsrfToken();
+		} catch (HttpApiException failure) {
+			if (failure.status() != 401) {
+				throw failure;
+			}
+			csrfToken = fetchCsrfToken();
+		}
+		HttpRequest request = HttpRequest.newBuilder(endpoint("/logout"))
+				.header(csrfToken.headerName(), csrfToken.token())
+				.POST(HttpRequest.BodyPublishers.noBody())
+				.timeout(Duration.ofSeconds(5)).build();
+		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		if (response.statusCode() != 204) {
+			throw apiFailure(response);
+		}
+	}
+
+	@Override
+	public void close() {
+		if (closed.compareAndSet(false, true)) {
+			try {
+				http.shutdownNow();
+			} finally {
+				synchronized (cookies) {
+					cookies.getCookieStore().removeAll();
+				}
+			}
+		}
+	}
+
+	private HttpRequest buildLoginRequest(CsrfToken csrfToken, String formBody) throws IOException {
 
 		Objects.requireNonNull(csrfToken, "Le jeton CSRF ne peut pas être null");
 		Objects.requireNonNull(formBody, "Le corps du formulaire ne peut pas être null");
 
-		URI endpoint = URI.create(base + "/login");
+		URI endpoint = endpoint("/login");
 		HttpRequest.Builder builder = HttpRequest.newBuilder(endpoint).header(csrfToken.headerName(), csrfToken.token())
 				.header("Content-Type", "application/x-www-form-urlencoded")
 				.POST(HttpRequest.BodyPublishers.ofString(formBody)).timeout(Duration.ofSeconds(5));
@@ -147,6 +210,58 @@ public class ServerConnection {
 		return String.join("&", formParameters);
 	}
 
+	private URI endpoint(String path) throws IOException {
+		if (closed.get()) {
+			throw new IOException("La connexion au serveur est fermée.");
+		}
+		return URI.create(base.toASCIIString() + path);
+	}
+
+	private HttpApiException apiFailure(HttpResponse<String> response) {
+		String code = null;
+		try {
+			ErrorResponse error = mapper.readValue(response.body(), ErrorResponse.class);
+			if (error != null) {
+				code = error.code();
+			}
+		} catch (IOException failure) {
+			code = null;
+		}
+		return new HttpApiException(response.statusCode(), code);
+	}
+
+	private LoginStatus loginStatus(HttpApiException failure) {
+		return switch (failure.status()) {
+		case 400 -> LoginStatus.INVALID_REQUEST;
+		case 401 -> LoginStatus.REJECTED;
+		case 403 -> failure.code().filter("HTTPS_REQUIRED"::equals).isPresent()
+				? LoginStatus.HTTPS_REQUIRED : LoginStatus.FORBIDDEN;
+		case 503 -> LoginStatus.UNAVAILABLE;
+		default -> LoginStatus.FAILED;
+		};
+	}
+
+	private static URI validateBase(URI base) {
+		Objects.requireNonNull(base, "L'adresse du serveur ne peut pas être nulle.");
+		String scheme = base.getScheme();
+		String host = base.getHost();
+		if (host == null || base.getRawUserInfo() != null || base.getRawQuery() != null
+				|| base.getRawFragment() != null
+				|| !("https".equalsIgnoreCase(scheme) || "http".equalsIgnoreCase(scheme))) {
+			throw new IllegalArgumentException("L'adresse du serveur doit être une URL HTTP ou HTTPS valide.");
+		}
+		boolean loopback = "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host)
+				|| "::1".equals(host) || "[::1]".equals(host);
+		if ("http".equalsIgnoreCase(scheme) && !loopback) {
+			throw new IllegalArgumentException("HTTPS est obligatoire pour un serveur distant.");
+		}
+		String normalized = base.normalize().toASCIIString();
+		while (normalized.endsWith("/")) {
+			normalized = normalized.substring(0, normalized.length() - 1);
+		}
+		return URI.create(normalized);
+	}
+
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record CsrfToken(String headerName, String token) {
 	}
@@ -156,6 +271,10 @@ public class ServerConnection {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public record CurrentUser(String userName) {
+	}
+
+	@JsonIgnoreProperties(ignoreUnknown = true)
+	public record ErrorResponse(String code) {
 	}
 
 }

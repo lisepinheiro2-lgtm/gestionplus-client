@@ -109,7 +109,7 @@ class ServerLoginTest {
 	}
 
 	@ParameterizedTest
-	@CsvSource({ "401,REJECTED", "403,CSRF_REJECTED", "503,UNAVAILABLE", "400,FAILED", "500,FAILED",
+	@CsvSource({ "401,REJECTED", "403,FORBIDDEN", "503,UNAVAILABLE", "400,INVALID_REQUEST", "500,FAILED",
 			"302,FAILED" })
 	void mapsLoginRefusalsWithoutReadingTheCurrentUser(int status, LoginStatus expected) throws Exception {
 
@@ -136,13 +136,25 @@ class ServerLoginTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(ints = { 400, 403, 500, 503 })
-	void neverAuthenticatesWhenTheCurrentUserLookupFails(int status) throws Exception {
+	@CsvSource({ "HTTPS_REQUIRED,HTTPS_REQUIRED", "FORBIDDEN,FORBIDDEN", "FUTURE_PUBLIC_CODE,FORBIDDEN" })
+	void classifiesForbiddenResponsesUsingTheirPublicCode(String code, LoginStatus expected) throws Exception {
+		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN),
+				json(403, "{\"code\":\"" + code + "\"}"))) {
+			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
+			assertEquals(expected, result.status());
+			assertNull(result.userName());
+			assertEquals(2, server.requests().size());
+		}
+	}
+
+	@ParameterizedTest
+	@CsvSource({ "400,INVALID_REQUEST", "403,FORBIDDEN", "500,FAILED", "503,UNAVAILABLE" })
+	void neverAuthenticatesWhenTheCurrentUserLookupFails(int status, LoginStatus expected) throws Exception {
 
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(status, "{}"))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
-			assertEquals(LoginStatus.FAILED, result.status());
+			assertEquals(expected, result.status());
 			assertNull(result.userName());
 		}
 
@@ -163,12 +175,12 @@ class ServerLoginTest {
 	}
 
 	@ParameterizedTest
-	@ValueSource(ints = { 401, 403, 503 })
-	void doesNotSendCredentialsWhenTheCsrfRequestIsRefused(int status) throws Exception {
+	@CsvSource({ "401,REJECTED", "403,FORBIDDEN", "503,UNAVAILABLE" })
+	void doesNotSendCredentialsWhenTheCsrfRequestIsRefused(int status, LoginStatus expected) throws Exception {
 
 		try (var server = new LoopbackHttpFixture(json(status, "{}"))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
-			assertEquals(LoginStatus.FAILED, result.status());
+			assertEquals(expected, result.status());
 			assertEquals(List.of("GET /api/auth/csrf HTTP/1.1"),
 					server.requests().stream().map(CapturedRequest::requestLine).toList());
 		}

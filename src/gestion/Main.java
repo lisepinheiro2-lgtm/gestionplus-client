@@ -13,12 +13,16 @@ import gestion.app.ApplicationContext;
 import gestion.app.DemoDataInitializer;
 import gestion.app.LoginController;
 import gestion.net.ServerConnection;
+import gestion.net.ServerConnection.CurrentUser;
 import gestion.ui.LaunchMode;
 import gestion.ui.LaunchSelectorWindow;
 import gestion.ui.LoginWindow;
 import gestion.ui.UIUtils;
 
 public final class Main {
+
+	private record LaunchSelection(LaunchMode mode, ServerConnection connection, CurrentUser user) {
+	}
 
 	private Main() {
 	}
@@ -27,9 +31,14 @@ public final class Main {
 
 		try {
 
-			LaunchMode mode = selectLaunchMode();
+			LaunchSelection selection = selectLaunchMode();
 
-			if (mode != LaunchMode.DEMO) {
+			if (selection.mode() == LaunchMode.CONNECTED) {
+				selection.connection().close();
+				return;
+			}
+
+			if (selection.mode() != LaunchMode.DEMO) {
 				return;
 			}
 
@@ -58,29 +67,36 @@ public final class Main {
 
 	}
 
-	private static LaunchMode selectLaunchMode() throws InterruptedException, ExecutionException {
+	private static LaunchSelection selectLaunchMode() throws InterruptedException, ExecutionException {
 
-		FutureTask<LaunchMode> selection = new FutureTask<>(() -> {
+		FutureTask<LaunchSelection> selection = new FutureTask<>(() -> {
 			UIUtils.installLookAndFeel();
 
 			while (true) {
 				LaunchMode mode = new LaunchSelectorWindow().askLaunchMode();
 
 				if (mode != LaunchMode.CONNECTED) {
-					return mode;
+					return new LaunchSelection(mode, null, null);
 				}
 
-				LoginController login = new LoginController(new LoginWindow(), new ServerConnection());
-
-				switch (login.showLogin()) {
-				case AUTHENTICATED:
-					return LaunchMode.CONNECTED;
-
-				case CLOSED:
-					return null;
-
-				case MODE_SELECTION:
-					break;
+				ServerConnection connection = new ServerConnection();
+				boolean transferred = false;
+				try {
+					LoginController login = new LoginController(new LoginWindow(), connection);
+					LoginController.Result result = login.showLogin();
+					switch (result.outcome()) {
+					case AUTHENTICATED:
+						transferred = true;
+						return new LaunchSelection(LaunchMode.CONNECTED, connection, result.user());
+					case CLOSED:
+						return new LaunchSelection(null, null, null);
+					case MODE_SELECTION:
+						break;
+					}
+				} finally {
+					if (!transferred) {
+						connection.close();
+					}
 				}
 
 			}

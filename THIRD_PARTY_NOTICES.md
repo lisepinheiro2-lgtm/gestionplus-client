@@ -1,6 +1,6 @@
 # Composants tiers — attributions et licences
 
-Inventaire documentaire initial du **27 octobre 2026**, complété le **19 novembre 2026** pour Jackson. Les restrictions du [code original de Gestion+](LICENSE.md) ne s'appliquent pas aux éléments tiers. Les textes complets des licences prévalent sur les résumés ci-dessous. Aucune exclusivité sur ces composants n'est revendiquée.
+Inventaire documentaire initial du **27 octobre 2026**, complété le **19 novembre 2026** pour Jackson et le **20 novembre 2026** pour Java Time. Les restrictions du [code original de Gestion+](LICENSE.md) ne s'appliquent pas aux éléments tiers. Les textes complets des licences prévalent sur les résumés ci-dessous. Aucune exclusivité sur ces composants n'est revendiquée.
 
 ## Raven — composants Swing
 
@@ -107,6 +107,24 @@ Le tableau recense les CVE 2025–2026 présentes dans ces avis et concernant un
 Trois autres avis 2.x de core sont publiés sans identifiant CVE dans les données consultées : [GHSA-72hv-8253-57qq](https://github.com/FasterXML/jackson-core/security/advisories/GHSA-72hv-8253-57qq), [GHSA-2m67-wjpj-xhg9](https://github.com/FasterXML/jackson-core/security/advisories/GHSA-2m67-wjpj-xhg9) et [GHSA-r7wm-3cxj-wff9](https://github.com/FasterXML/jackson-core/security/advisories/GHSA-r7wm-3cxj-wff9), concernant des contournements de limites de lecture. Leurs plages déclarées excluent aussi 2.23.0. Databind comporte également [GHSA-mhm7-754m-9p8w](https://github.com/FasterXML/jackson-databind/security/advisories/GHSA-mhm7-754m-9p8w), sans CVE ni version corrigée renseignée ; sa plage 2.x déclarée se termine à 2.21.4 et ne couvre pas 2.23.0. Les avis core [CVE-2026-29062](https://github.com/FasterXML/jackson-core/security/advisories/GHSA-6v53-7c9g-w56r) et [CVE-2026-110729](https://github.com/FasterXML/jackson-core/security/advisories/GHSA-vvjm-vc27-799r) visent uniquement 3.x.
 
 Les fonctionnalités polymorphes concernées par certains avis ne sont pas activées par ce dépôt de JAR. La configuration du futur lecteur JSON et les limites de lecture restent une étape de développement distincte.
+
+## Jackson Java Time — Apache License 2.0
+
+**Ajout du 20 novembre 2026.** Le module officiel `com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.23.0` complète l'ensemble Jackson 2.23 déjà présent. Il permet de lire les échéances de session dans des objets `java.time.Instant`. Le lecteur est configuré explicitement avec `JavaTimeModule` ; les écritures de dates sont configurées au format ISO-8601.
+
+| JAR local | Version | Taille en octets | Copies exactes des textes embarqués |
+| --- | --- | ---: | --- |
+| [jackson-datatype-jsr310-2.23.0.jar](lib/jackson-datatype-jsr310-2.23.0.jar) | 2.23.0 | 140 423 | [Apache 2.0](licenses/Jackson-JavaTime-Apache-2.0.txt) · [NOTICE](licenses/Jackson-JavaTime-NOTICE.txt) |
+
+- Provenance : JAR binaire sans classifier de [Maven Central](https://repo.maven.apache.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.23.0/), avec vérification du [POM publié](https://repo.maven.apache.org/maven2/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.23.0/jackson-datatype-jsr310-2.23.0.pom).
+- Éditeur indiqué par le manifeste : **FasterXML** ; version embarquée **2.23.0**. Le nom JPMS `com.fasterxml.jackson.datatype.jsr310` est vérifié dans le descripteur de l'archive.
+- `META-INF/LICENSE` et `META-INF/NOTICE` sont copiés octet pour octet. Le NOTICE rappelle l'origine de Jackson et attribue sa création à Tatu Saloranta.
+- L'empreinte SHA-512 est comparée au fichier publié par Maven Central. L'intégrité ZIP et les copies des textes légaux sont vérifiées sans exécuter le JAR.
+- Empreinte SHA-256 locale : `f348f4de49644afa0ccbff6b018709a5f0f1468c76852e4217051890a0b8528c`.
+- L'entrée `.classpath` utilise un chemin relatif et l'attribut `module=true`. `src/module-info.java` déclare `requires com.fasterxml.jackson.datatype.jsr310;` ; l'ouverture réflexive ciblée de `gestion.net` vers databind est conservée.
+- Référence d'intégration : [documentation officielle des modules Java 8 de Jackson 2.x](https://github.com/FasterXML/jackson-modules-java8). Aucun autre module Jackson n'est ajouté.
+
+Ce complément ne constitue pas une nouvelle campagne de vérification des avis de sécurité listés au 19 novembre. Aucune compilation, exécution de tests, application, serveur ou migration n'est lancée pour cette intégration.
 
 ## Portée de la vérification
 

@@ -11,6 +11,7 @@ import javax.swing.SwingWorker;
 
 import gestion.net.LoginStatus;
 import gestion.net.ServerConnection;
+import gestion.net.ServerConnection.CurrentUser;
 import gestion.net.ServerConnection.LoginResult;
 import gestion.ui.LoginWindow;
 
@@ -20,11 +21,24 @@ public final class LoginController implements AutoCloseable {
 		AUTHENTICATED, MODE_SELECTION, CLOSED
 	}
 
+	public record Result(Outcome outcome, CurrentUser user) {
+		public Result {
+			Objects.requireNonNull(outcome, "L'issue de connexion ne peut pas être nulle.");
+			if (outcome == Outcome.AUTHENTICATED) {
+				if (user == null || user.userName() == null || user.userName().isBlank()) {
+					throw new IllegalArgumentException("Une connexion réussie exige une identité confirmée.");
+				}
+			} else if (user != null) {
+				throw new IllegalArgumentException("Une connexion non authentifiée ne fournit pas d'identité.");
+			}
+		}
+	}
+
 	private final LoginWindow window;
 	private final ServerConnection connection;
 	private final WindowAdapter lifecycle;
 	private SwingWorker<LoginResult, Void> activeAttempt;
-	private boolean authenticated;
+	private CurrentUser authenticatedUser;
 	private boolean closed;
 
 	public LoginController(LoginWindow window, ServerConnection connection) {
@@ -40,16 +54,16 @@ public final class LoginController implements AutoCloseable {
 		window.setLoginAction(this::submit);
 	}
 
-	public Outcome showLogin() {
+	public Result showLogin() {
 
 		try {
 			window.showLogin();
 
-			if (authenticated) {
-				return Outcome.AUTHENTICATED;
+			if (authenticatedUser != null) {
+				return new Result(Outcome.AUTHENTICATED, authenticatedUser);
 			}
 
-			return window.isModeSelectionRequested() ? Outcome.MODE_SELECTION : Outcome.CLOSED;
+			return new Result(window.isModeSelectionRequested() ? Outcome.MODE_SELECTION : Outcome.CLOSED, null);
 		} finally {
 			close();
 		}
@@ -75,7 +89,7 @@ public final class LoginController implements AutoCloseable {
 
 	private void submit() {
 
-		if (closed || authenticated || activeAttempt != null || !window.isDisplayable()) {
+		if (closed || authenticatedUser != null || activeAttempt != null || !window.isDisplayable()) {
 			return;
 		}
 
@@ -158,7 +172,11 @@ public final class LoginController implements AutoCloseable {
 	}
 
 	private void showResult(LoginResult result) {
-		authenticated = result.status() == LoginStatus.AUTHENTICATED;
+		if (result.status() == LoginStatus.AUTHENTICATED
+				&& (result.userName() == null || result.userName().isBlank())) {
+			result = new LoginResult(LoginStatus.FAILED, null);
+		}
+		authenticatedUser = result.status() == LoginStatus.AUTHENTICATED ? new CurrentUser(result.userName()) : null;
 
 		switch (result.status()) {
 		case AUTHENTICATED:
@@ -169,8 +187,16 @@ public final class LoginController implements AutoCloseable {
 			window.showAuthenticationRejected();
 			break;
 
-		case CSRF_REJECTED:
-			window.showError("La session de sécurité a expiré. Réessayez.");
+		case FORBIDDEN:
+			window.showError("La connexion a été refusée par le serveur. Réessayez ou contactez votre administrateur.");
+			break;
+
+		case HTTPS_REQUIRED:
+			window.showError("Le serveur exige une connexion sécurisée (HTTPS).");
+			break;
+
+		case INVALID_REQUEST:
+			window.showError("Les informations de connexion ne sont pas valides.");
 			break;
 
 		case UNAVAILABLE:

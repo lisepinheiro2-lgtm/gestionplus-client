@@ -35,6 +35,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 	private final JLabel page = new JLabel("Accueil", JLabel.CENTER);
 	private final JButton home;
 	private final JButton account;
+	private Runnable accountAction;
 	private final RavenDarkLightSwitch theme = new RavenDarkLightSwitch();
 	private final JPanel navigation = new JPanel(new java.awt.GridLayout(1, 6, 6, 0)) {
 		@Override
@@ -110,6 +111,11 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		account.setFocusable(false);
 		account.setToolTipText("Compte utilisateur — bientôt disponible");
 		account.getAccessibleContext().setAccessibleName("Compte utilisateur");
+		account.addActionListener(event -> {
+			if (accountAction != null) {
+				accountAction.run();
+			}
+		});
 
 		GridBagConstraints constraints = new GridBagConstraints();
 		constraints.gridx = 0;
@@ -158,6 +164,13 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		destinations.put(title, button);
 		navigation.add(button);
 		return button;
+	}
+
+	public void setAccountAction(Runnable action) {
+		accountAction = action;
+		account.setEnabled(action != null);
+		account.setFocusable(action != null);
+		account.setToolTipText(action == null ? "Compte utilisateur — bientôt disponible" : "Compte utilisateur");
 	}
 
 	public void setPageTitle(String title) {

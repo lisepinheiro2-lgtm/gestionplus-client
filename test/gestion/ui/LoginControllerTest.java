@@ -43,6 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import gestion.app.LoginController;
 import gestion.app.LoginController.Outcome;
+import gestion.app.LoginController.Result;
 import gestion.net.LoginStatus;
 import gestion.net.ServerConnection;
 import gestion.net.ServerConnection.LoginResult;
@@ -135,7 +136,9 @@ class LoginControllerTest {
 	@ParameterizedTest
 	@CsvSource(delimiter = '|', value = {
 			"REJECTED|Identifiant, mot de passe ou code d’authentification incorrect.",
-			"CSRF_REJECTED|La session de sécurité a expiré. Réessayez.",
+			"FORBIDDEN|La connexion a été refusée par le serveur. Réessayez ou contactez votre administrateur.",
+			"HTTPS_REQUIRED|Le serveur exige une connexion sécurisée (HTTPS).",
+			"INVALID_REQUEST|Les informations de connexion ne sont pas valides.",
 			"UNAVAILABLE|Le serveur est indisponible. Réessayez plus tard.",
 			"FAILED|Impossible de contacter le serveur. Vérifiez votre connexion." })
 	void restoresTheFormForEveryRefusal(LoginStatus refusal, String expectedMessage) throws Exception {
@@ -199,35 +202,37 @@ class LoginControllerTest {
 	@Test
 	void verifiedSuccessReturnsTheAuthenticatedOutcome() throws Exception {
 		connect((userName, suppliedPassword, code) -> new LoginResult(LoginStatus.AUTHENTICATED, userName));
-		FutureTask<Outcome> modal = openModal();
+		FutureTask<Result> modal = openModal();
 		onEdt(() -> {
 			setInputs();
 			submit.doClick(0);
 		});
 		awaitStatus("Connexion réussie.");
 		onEdt(() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING)));
-		assertEquals(Outcome.AUTHENTICATED, modal.get(5, TimeUnit.SECONDS));
+		Result result = modal.get(5, TimeUnit.SECONDS);
+		assertEquals(Outcome.AUTHENTICATED, result.outcome());
+		assertEquals("fictitious_user", result.user().userName());
 	}
 
 	@Test
 	void closingTheWindowReturnsClosedInsteadOfRequestingAnotherMode() throws Exception {
 		connect((userName, suppliedPassword, code) -> new LoginResult(LoginStatus.REJECTED, null));
 		onEdt(() -> assertEquals(Outcome.CLOSED, duringModal(window, controller::showLogin,
-				() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING)))));
+				() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING))).outcome()));
 	}
 
 	@Test
 	void escapeReturnsClosedInsteadOfRequestingAnotherMode() throws Exception {
 		connect((userName, suppliedPassword, code) -> new LoginResult(LoginStatus.REJECTED, null));
 		onEdt(() -> assertEquals(Outcome.CLOSED,
-				duringModal(window, controller::showLogin, () -> pressEscape(window))));
+				duringModal(window, controller::showLogin, () -> pressEscape(window)).outcome()));
 	}
 
 	@Test
 	void theBackButtonReturnsTheModeSelectionOutcome() throws Exception {
 		connect((userName, suppliedPassword, code) -> new LoginResult(LoginStatus.REJECTED, null));
 		onEdt(() -> assertEquals(Outcome.MODE_SELECTION,
-				duringModal(window, controller::showLogin, () -> back.doClick(0))));
+				duringModal(window, controller::showLogin, () -> back.doClick(0)).outcome()));
 	}
 
 	@Test
@@ -264,7 +269,7 @@ class LoginControllerTest {
 			}
 
 		});
-		FutureTask<Outcome> modal = openModal();
+		FutureTask<Result> modal = openModal();
 
 		try {
 			onEdt(() -> {
@@ -273,7 +278,7 @@ class LoginControllerTest {
 			});
 			assertTrue(started.await(5, TimeUnit.SECONDS), "La tentative réseau n'a pas démarré.");
 			onEdt(() -> pressEscape(window));
-			assertEquals(Outcome.CLOSED, modal.get(5, TimeUnit.SECONDS));
+			assertEquals(Outcome.CLOSED, modal.get(5, TimeUnit.SECONDS).outcome());
 			assertTrue(interrupted.await(5, TimeUnit.SECONDS), "La tentative réseau n'a pas été interrompue.");
 			allowFinish.countDown();
 			assertTrue(finished.await(5, TimeUnit.SECONDS), "La tentative réseau ne s'est pas terminée.");
@@ -297,8 +302,8 @@ class LoginControllerTest {
 		onEdt(() -> controller = new LoginController(window, connection));
 	}
 
-	private FutureTask<Outcome> openModal() throws Exception {
-		FutureTask<Outcome> modal = new FutureTask<>(controller::showLogin);
+	private FutureTask<Result> openModal() throws Exception {
+		FutureTask<Result> modal = new FutureTask<>(controller::showLogin);
 		SwingUtilities.invokeLater(modal);
 		onEdt(() -> assertTrue(window.isShowing()));
 		return modal;
