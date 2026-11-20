@@ -7,6 +7,14 @@ read_when:
 
 # Fiabilisation de la version locale — 20 octobre 2026
 
+<a id="portee-modes-2026-11-20"></a>
+
+## Périmètre des protections CSV — 20 novembre 2026
+
+Les protections CSV décrites ici concernent le mode **Démonstration**, construit par `ApplicationContext` dans `%LOCALAPPDATA%/GestionPlus/Demo`. CONNECTED possède son propre contexte et ne construit pas ces dépôts. Le démarrage de la démo peut toujours récupérer ou migrer les fichiers de son dossier.
+
+Voir l'[architecture](ARCHITECTURE.md#sessions-connectees-2026-11-20) et les [preuves](VALIDATION.md#validation-connexion-2026-11-20).
+
 Les six CSV fournis avec ce projet sont un **jeu de données fictives**, confirmé comme tel par l'utilisatrice, et doivent être conservés dans le dépôt. Les noms, contrats, absences et affectations de ce jeu servent à la démonstration ; ils n'ont pas été remplacés ou convertis pendant la fiabilisation. Les journaux de récupération, temporaires et profils de recette locaux restent exclus de Git. D'éventuelles futures données réelles devront être conservées séparément du jeu de démonstration versionné.
 
 La cible décidée est une application utilisable depuis plusieurs ordinateurs, avec plusieurs comptes, une base centrale et des autorisations contrôlées **sur le serveur**. Cette livraison conserve une application locale utilisant les CSV. Elle ne fournit ni serveur, ni comptes, ni utilisation concurrente de ces fichiers depuis plusieurs postes. Aucune migration des données existantes n'est lancée.

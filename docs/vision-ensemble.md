@@ -10,11 +10,21 @@ read_when:
 
 # Gestion+ — vision d’ensemble
 
+<a id="connexion-locale-2026-11-20"></a>
+
+## Premier parcours connecté réel — 20 novembre 2026
+
+Le raccordement client–serveur n'est plus entièrement à construire : `03387cc` côté client communique avec les routes d'authentification/session du serveur `b2ca9e3`. Lise valide manuellement connexion TOTP, accueil avec identité, déconnexion, formulaire et reconnexion sur PostgreSQL local isolé. La démonstration CSV reste fonctionnelle et distincte.
+
+Le serveur décide de l'identité, du MFA, de la validité de session et des permissions. Le client possède un contexte par session, un transport avec ses cookies et le nettoyage de ses fenêtres. Les cartes métier connectées sont désactivées ; l'intégration métier et le suivi Swing de l'expiration restent à construire.
+
+Voir [VALIDATION](VALIDATION.md#validation-connexion-2026-11-20). **284/284** est le résultat client rapporté par Lise ; **900/900 sur `4c630ee` le 19 novembre** reste la dernière validation globale serveur rapportée. La préparation locale de l'assistant ne remplace aucune de ces suites.
+
 [Documentation du client](index.md) · [Documentation du serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/index.md)
 
 **Gestion+ est un même projet métier, aujourd’hui développé dans deux dépôts.** Le client Swing porte les écrans de gestion ; le chantier Spring Boot prépare les comptes, les contrôles et le stockage centralisé PostgreSQL.
 
-Les projets client et serveur restent séparés et doivent pouvoir fonctionner ensemble. Leur intégration, leurs contrats d’échange et la compatibilité de leurs versions restent à construire. Cette page distingue les décisions fonctionnelles, leur historique et les validations techniques.
+Les projets client et serveur restent séparés et doivent pouvoir fonctionner ensemble. Le raccordement de la connexion/session est présent depuis le 20 novembre ; l'intégration métier et la compatibilité au fil des évolutions restent à construire. Cette page distingue les décisions fonctionnelles, leur historique et les validations techniques.
 
 <a id="decisions-consolidees-2026-11-11"></a>
 

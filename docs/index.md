@@ -1,12 +1,26 @@
 ---
 title: "Documentation du client Swing"
-summary: "Point d’entrée du client et liens vers la cible commune Gestion+."
+summary: "Reprise client 03387cc : TOTP local réel, déconnexion, démo et 284/284 rapportés par Lise."
 read_when:
   - "commencer une séance sur le client ou retrouver un document"
   - "préparer la réunion du client et du serveur dans Gestion+"
 ---
 
 # Documentation du client Swing
+
+<a id="reprise-connexion-2026-11-20"></a>
+
+## Reprise du 20 novembre 2026
+
+Le client `03387cc` propose démonstration sur CSV fictifs et connexion HTTP au serveur. Lise rapporte **284/284 tests réussis** et confirme la recette locale avec TOTP, accueil, déconnexion/reconnexion et maintien de la démo.
+
+- [Architecture des deux modes et propriétaires de session](ARCHITECTURE.md#sessions-connectees-2026-11-20).
+- [Résultats, auteurs des vérifications et limites](VALIDATION.md#validation-connexion-2026-11-20).
+- [Formulaire, accueil et bouton Compte](INTERFACE-RAVEN.md#interface-connectee-2026-11-20).
+- [Suite : compte, expiration et métier connecté](ROADMAP.md#suite-connexion-2026-11-20).
+- [État commun client–serveur](vision-ensemble.md#connexion-locale-2026-11-20).
+
+Les jalons antérieurs gardent leur contexte. Aucun test, lancement ou migration n'est exécuté par cette mise à jour.
 
 [Présentation du client](../README.md) · [Vision d’ensemble de Gestion+](vision-ensemble.md) · [Documentation du serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/index.md)
 

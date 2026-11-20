@@ -1,10 +1,28 @@
 ---
-summary: "Résultats historiques de tests et limites des preuves disponibles pour Swing."
+summary: "284/284 tests client rapportés par Lise sur 03387cc et recette réelle locale avec TOTP ; preuves et limites distinguées."
 read_when:
   - "examiner les validations les régressions et les vérifications restant à autoriser"
 ---
 
 # Tests et état des validations
+
+<a id="validation-connexion-2026-11-20"></a>
+
+## Connexion, sessions et preuves — 20 novembre 2026
+
+| Preuve | Résultat et attribution | Portée |
+| --- | --- | --- |
+| Suite du client `03387cc` | **284/284 tests réussis dans Eclipse, rapportés par Lise**, puis push confirmé. | Aucune exécution de cette suite par l'assistant pendant cette mise à jour documentaire. |
+| Recette de Lise | Connexion réelle avec TOTP, `HomePanel`, identité, déconnexion, formulaire et seconde connexion réussis. Démonstration également confirmée fonctionnelle. | Serveur local et PostgreSQL isolé, compte SUPER_ADMIN fictif. La reconnexion utilise le même compte ; elle ne prouve pas une recette manuelle entre deux utilisateurs distincts. |
+| Contrôles de l'assistant | Copie du serveur `b2ca9e3` compilée, V1–V27 dans une nouvelle base dédiée ; HTTP réel : sans TOTP 401, avec TOTP 200, identité 200, échéance 200, logout 204, puis lecture protégée 401. | Préparation locale avant cette mission documentaire ; aucune suite serveur relancée. Ce parcours précède la simplification ultérieure des identifiants locaux. |
+
+Les ajouts de `03387cc` couvrent `ConnectedApplicationContextTest`, `SessionCoordinatorTest`, `ConnectedHomeWindowTest` et `ConnectedSessionLifecycleTest`. Le test de succès de `LoginControllerTest` n'actionne plus la croix pour terminer le dialogue. Ils couvrent nettoyage idempotent, états, EDT, déconnexion confirmée ou non, demandes répétées, fermeture, retour au formulaire et deux comptes fictifs successifs avec des cookies distincts.
+
+Les tests du parcours Swing utilisent des réponses HTTP fictives sur boucle locale ; ils ne démarrent pas le vrai serveur Spring Boot. Les classes graphiques portent le tag `desktop`. Elles font partie de la suite Eclipse avec affichage ; `tools/verify.py` les exclut de son exécution sans affichage et copie les ressources `icons` et `demo-data`.
+
+Les **252/252** précédemment rapportés concernaient le socle `31fe887`, avant le raccordement. Les décomptes d'octobre ci-dessous gardent leur date et ne décrivent pas la suite actuelle.
+
+**Restent à valider ou développer :** suivi Swing de l'expiration et des 401 pendant l'usage, annulation des futures tâches métier, isolation de leurs réponses tardives et recette entre comptes distincts sur le vrai serveur. Les cartes métier connectées sont désactivées. Ces preuves ne constituent pas une validation de déploiement.
 
 ## Vérification de la fiabilisation — 20 octobre 2026
 
@@ -20,7 +38,7 @@ Le bilan privé de livraison contient le nombre final de tests et les journaux d
 
 État documentaire au **20 octobre 2026**. Présence de code, test déclaré et résultat exécuté sont trois informations différentes. Cette revue a vérifié des textes, chemins et sources, sans compiler ni lancer l'application ou les tests Java.
 
-## Suite présente dans le dépôt
+## Inventaire historique du 20 octobre 2026
 
 | Classe | Déclarations @Test | Périmètre existant |
 | --- | --- | --- |

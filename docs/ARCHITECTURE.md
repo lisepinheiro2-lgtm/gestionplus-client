@@ -1,11 +1,33 @@
 ---
-summary: "Organisation du client Swing décrite au jalon du 20 octobre 2026."
+summary: "Client 03387cc : modes DEMO et CONNECTED, JSON/Java Time, contexte de session, accueil partagé et déconnexion ; historique conservé."
 read_when:
   - "retrouver les responsabilités des classes et les formats CSV du client"
   - "préparer une évolution vers le serveur sans confondre historique et cible"
 ---
 
 # Architecture du projet gestion
+
+<a id="sessions-connectees-2026-11-20"></a>
+
+## Deux modes et cycle connecté — 20 novembre 2026
+
+État du client `03387cc`, après le socle `31fe887`, le raccordement `82ad003` et les corrections `6c3fd47`. Cette section décrit le code actuel ; les relevés d'octobre ci-dessous restent historiques.
+
+| Responsabilité | Classes et comportement |
+| --- | --- |
+| Choix et assemblage | [`Main`](../src/gestion/Main.java) installe FlatLaf sur l'EDT, ouvre le sélecteur modal et choisit explicitement le mode. Aucun drapeau `gestionplus.demo` ne remplace le sélecteur. |
+| Démonstration | `DemoDataInitializer`, puis `ApplicationContext`, utilisent exclusivement `%LOCALAPPDATA%/GestionPlus/Demo`. Cet assemblage CSV reste propre au mode DEMO. |
+| Authentification | `LoginWindow` présente identifiant, mot de passe et TOTP dans le même formulaire. `LoginController` exécute le réseau hors EDT, attend l'identité confirmée par `/api/auth/me`, ferme le dialogue après succès et transfère la connexion. |
+| Session connectée | [`ConnectedApplicationContext`](../src/gestion/app/ConnectedApplicationContext.java) possède l'identité, le transport et un UUID de contexte, avec états ACTIVE, CLOSING et CLOSED. `close()` libère localement la connexion, sans POST de logout. |
+| Accueil | `ConnectedHomeWindow` assemble `ApplicationHeader` et le `HomePanel` existant, sans services CSV ni écrans métier connectés. Les cartes sans action sont désactivées. |
+| Déconnexion | [`SessionCoordinator`](../src/gestion/app/SessionCoordinator.java) passe en CLOSING sur l'EDT, exécute le logout hors EDT, ferme le contexte et transmet `LogoutResult`. Les demandes répétées ne multiplient pas les appels ; la croix peut demander de quitter pendant le logout. |
+| Destination | Après déconnexion, l'ancienne fenêtre est disposée et le formulaire revient directement avec un nouveau transport. Après la croix, l'application se termine. L'absence de confirmation serveur est signalée. |
+
+[`ServerConnection`](../src/gestion/net/ServerConnection.java) conserve ses propres cookies par instance, obtient un CSRF courant avant les POST et ferme les ressources HTTP localement. Le serveur décide de la validité de session et des droits. HTTP est limité aux adresses de boucle locale ; une adresse distante exige HTTPS.
+
+Jackson Core/Databind/Java Time sont en **2.23.0** ; Annotations est en **2.23**. Les JAR sont sous `lib/`, déclarés dans `.classpath` et le module. `JavaTimeModule` prend en charge les échéances ISO sous forme d'`Instant` ; l'ouverture JPMS de `gestion.net` reste ciblée vers Databind.
+
+**Suite :** le transport sait lire `/api/auth/session`, mais aucun moniteur Swing de l'expiration n'est raccordé. Les API métier, l'écran de compte et la recette réelle entre deux comptes distincts restent à compléter. Voir les [validations](VALIDATION.md#validation-connexion-2026-11-20).
 
 État relu le **20 octobre 2026**. Cette page décrit le code présent, pas les fonctionnalités futures de la [feuille de route](ROADMAP.md). Les résultats d'exécution sont séparés dans [VALIDATION.md](VALIDATION.md).
 
@@ -96,7 +118,7 @@ Une absence synchronise une demande de remplacement sans désattribuer automatiq
 
 `getMonthyHours()` est devenu `WorkHoursService.getMonthlyHours()` ; les anciens accesseurs de compteurs deviennent `getAssignedHours()` et `getRemainingHours()`. Les anciens champs d'`Employee` restent présents pour le CSV ; Personnel affiche les calculs d'`EmployeeSummary`.
 
-## Configuration et suite
+## Configuration du jalon d’octobre et suite
 
 Le module déclare `java.desktop`, `java.prefs`, FlatLaf, FlatLaf Extras et JSVG. `.classpath` contient les bibliothèques locales et le conteneur JUnit 6. Le jalon historique utilisait Java 25 ; aucune compilation actuelle n'a été exécutée pour cette revue.
 

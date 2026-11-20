@@ -1,12 +1,22 @@
 # Gestion+
 
+<a id="connexion-2026-11-20"></a>
+
+## Connexion et démonstration — 20 novembre 2026
+
+Le sélecteur graphique est l'entrée commune. La démo ouvre les écrans métier sur les CSV fictifs dédiés. Connexion envoie identifiant, mot de passe et TOTP au serveur ; après succès et confirmation de l'identité, l'accueil existant s'ouvre avec les cartes métier connectées désactivées.
+
+Compte déclenche directement la déconnexion, sans menu. Le formulaire revient avec un nouveau transport. Une absence de confirmation serveur est signalée. La croix tente aussi le logout puis ferme l'application.
+
+URL par défaut : `http://localhost:8080`. Pour une autre adresse, argument VM `-Dgestionplus.server.url=...` ; HTTPS est exigé hors boucle locale. Serveur et compte actif, avec MFA si requis, doivent être préparés séparément. Aucun compte ni secret de connexion n'est fourni par ce dépôt.
+
 **Une application Java de gestion du personnel, des clients, des plannings et des remplacements.**
 
 Gestion+ est un projet personnel de portfolio, développé progressivement autour de besoins concrets de planification : suivre les heures, gérer les absences et réattribuer les interventions sans perdre leur historique.
 
-Ce dépôt contient le **client de bureau Java Swing**, utilisable de façon autonome avec des fichiers CSV locaux. Le [serveur Spring Boot](https://github.com/lisepinheiro2-lgtm/gestionplus-server) est développé dans un dépôt distinct, pour préparer les comptes, les permissions et le stockage centralisé.
+Ce dépôt contient le **client de bureau Java Swing**, avec deux modes : **Démonstration**, autonome sur CSV fictifs, et **Connexion**, raccordé à l'authentification et aux sessions du [serveur Spring Boot](https://github.com/lisepinheiro2-lgtm/gestionplus-server). Le serveur conserve les contrôles d'identité, de droits et de périmètre.
 
-> **En développement actif.** État du client relu dans les sources le **29 octobre 2026**. Les fonctionnalités décrites sont présentes dans le code ; cette revue documentaire ne constitue pas une validation complète de l'application.
+> **En développement actif — état `03387cc` relu le 20 novembre 2026.** Lise rapporte 284/284 tests réussis et une recette réelle locale : TOTP, accueil, déconnexion/reconnexion et démo. Les API métier connectées et le suivi Swing de l'expiration restent à développer.
 
 🚀 **[Télécharger et essayer la démo Windows](https://github.com/lisepinheiro2-lgtm/gestionplus-client/releases/tag/v0.1.0-demo)**
 *Démonstration du client Swing avec données fictives et stockage CSV local, sans connexion au serveur.*
@@ -17,9 +27,9 @@ Ce dépôt contient le **client de bureau Java Swing**, utilisable de façon aut
 
 | Composant | État actuel |
 | --- | --- |
-| **Client Swing — ce dépôt** | Application locale : personnel, clients, interventions, absences et remplacements. Persistance dans six CSV. |
+| **Client Swing — ce dépôt** | Démo métier sur six CSV fictifs ; mode connecté pour identité, accueil et déconnexion. |
 | **Serveur Spring Boot** | Chantier séparé pour l'authentification, les autorisations et la persistance centralisée. Voir son [README](https://github.com/lisepinheiro2-lgtm/gestionplus-server#readme). |
-| **Connexion client–serveur** | Intégration à réaliser. Le client actuel ne demande ni serveur ni compte pour démarrer. |
+| **Connexion client–serveur** | CSRF, mot de passe et TOTP selon le compte, puis identité confirmée. La démo reste disponible sans serveur ni compte. |
 
 Le dépôt GitHub s'appelle désormais `gestionplus-client`. Le projet Eclipse et le package racine s'appellent `gestion` ; le module Java et le nœud de préférences conservent le nom historique `gestionRemplacement`.
 
@@ -93,15 +103,17 @@ Le démarrage appelle la récupération puis la migration des anciens CSV vers l
 
 1. Cloner ou télécharger ce dépôt, puis importer le projet Java existant `gestion` dans Eclipse.
 2. Sélectionner un **JDK 25**.
-3. Conserver les dossiers `src` et `test`, ainsi que les bibliothèques de `lib` déclarées dans `.classpath` : **FlatLaf 3.7.2**, **FlatLaf Extras 3.7.2** et **JSVG 2.1.0**.
-4. Vérifier le répertoire de travail de la configuration de lancement : les CSV sont recherchés dans ce dossier, initialisé par `Path.of(".")`.
-5. Exécuter **`gestion.Main`** comme application Java.
+3. Conserver `src`, `test` et les JAR de `lib` déclarés dans `.classpath` : **FlatLaf/Extras 3.7.2**, **JSVG 2.1.0**, **Jackson Core/Databind/Java Time 2.23.0** et **Annotations 2.23**.
+4. La démo utilise `%LOCALAPPDATA%/GestionPlus/Demo` ; Connexion utilise le serveur, sans cet assemblage CSV.
+5. Exécuter **`gestion.Main`**, puis choisir le mode. L'option VM `--enable-native-access=com.formdev.flatlaf` autorise les appels natifs de FlatLaf sous JDK 25.
 
 Le module s'appelle toujours `gestionRemplacement`. Le conteneur **JUnit 6** d'Eclipse est utilisé pour les tests ; les sorties sont séparées entre `bin` et `bin-test`.
 
 Les CSV versionnés sont un **jeu de démonstration fictif**. Pour essayer une migration ou un scénario d'erreur, utiliser une copie isolée du dossier de données.
 
 ## Tests et niveau de validation
+
+**20 novembre : 284/284 tests réussis dans Eclipse sont rapportés par Lise sur `03387cc`.** La recette réelle confirme TOTP, accueil, identité, déconnexion/reconnexion et démo. Les tests Swing utilisent des réponses HTTP fictives ; les [preuves et leurs limites](docs/VALIDATION.md#validation-connexion-2026-11-20) sont distinguées.
 
 Au 29 octobre 2026, le dépôt contient **100 méthodes annotées `@Test` dans neuf classes de test**. Elles portent sur les durées et périodes, les affectations, les absences, la fiabilité des CSV, la récupération après interruption et plusieurs comportements des composants Swing.
 
@@ -113,7 +125,8 @@ Les [résultats historiques](docs/VALIDATION.md) gardent leurs dates et leur pé
 
 ## Prochaines étapes
 
-- Relier progressivement le client au serveur, avec contrôle des droits côté serveur.
+- Raccorder les écrans et API métier connectés, avec contrôle des droits côté serveur.
+- Développer le suivi Swing de l'expiration, l'avertissement et la gestion des 401 pendant l'usage.
 - Compléter les parcours clients, les trajets et les corrections d'horaires.
 - Terminer les réorganisations d'absences et de remplacements encore limitées.
 - Développer la vue journée, les communications et les fonctions d'archives.
@@ -139,6 +152,6 @@ Gestion+ est le projet portfolio de l'autrice du compte [lisepinheiro2-lgtm](htt
 
 **Droits réservés sur ses créations originales uniquement**, avec une [permission gratuite d'évaluation technique](LICENSE.md) : consultation, copie, compilation, essais locaux sur données fictives et adaptations nécessaires à l'évaluation, notamment par les recruteurs. Les CSV de démonstration sont fictifs selon l'autrice. Les autres usages du code original nécessitent une autorisation selon ces conditions ; les modalités de contact y figurent.
 
-**Les composants tiers gardent leurs propres licences et droits de réutilisation**, y compris commerciale lorsque leur licence l'autorise : Raven et JSVG sous MIT, FlatLaf et FlatLaf Extras sous Apache 2.0. Voir les [attributions, textes de licence et limites de provenance](THIRD_PARTY_NOTICES.md). La licence MIT de Raven ne place pas l'ensemble de Gestion+ sous MIT, et les droits réservés de Gestion+ ne restreignent pas la licence de Raven.
+**Les composants tiers gardent leurs propres licences et droits de réutilisation**, y compris commerciale lorsque leur licence l'autorise : Raven et JSVG sous MIT, FlatLaf, FlatLaf Extras et Jackson sous Apache 2.0. Voir les [attributions, textes de licence et limites de provenance](THIRD_PARTY_NOTICES.md). La licence MIT de Raven ne place pas l'ensemble de Gestion+ sous MIT, et les droits réservés de Gestion+ ne restreignent pas la licence de Raven.
 
 Ces mentions ne bloquent pas techniquement les copies et ne garantissent pas une exclusivité totale. Les droits de consultation et de fork prévus par les conditions de GitHub sont préservés.

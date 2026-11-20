@@ -7,6 +7,14 @@ read_when:
 
 # Page Personnel : carte des classes
 
+<a id="portee-modes-2026-11-20"></a>
+
+## Personnel selon le mode — 20 novembre 2026
+
+Les fonctionnalités Personnel décrites ici restent accessibles en **Démonstration**. Sur `03387cc`, la carte Personnel de l'accueil connecté est désactivée : son écran et son API métier ne sont pas raccordés. La connexion avec TOTP ne valide pas l'usage connecté de ces services.
+
+Voir l'[architecture](ARCHITECTURE.md#sessions-connectees-2026-11-20) et les [preuves](VALIDATION.md#validation-connexion-2026-11-20).
+
 ## Mise à jour de fiabilisation — 20 octobre 2026
 
 Cette section remplace les limites de fiabilité de la version précédente décrites plus bas. Voir [FIABILISATION.md](FIABILISATION.md) pour le contrat complet et [ROADMAP.md](ROADMAP.md) pour la suite.

@@ -1,5 +1,5 @@
 ---
-summary: "Identité graphique de Gestion+ dans Swing, avec les ressources, les palettes clair et sombre, les composants Raven et les repères par écran."
+summary: "Interface au 20 novembre : sélecteur, TOTP, HomePanel partagé, identité et déconnexion ; revue graphique du 19 conservée."
 read_when:
   - "travailler sur le design les thèmes et la navigation Swing"
 ---
@@ -8,9 +8,25 @@ read_when:
 
 # Identité graphique de Gestion+ dans Swing
 
-[Original dans le dépôt client][fiche-client] · [Sources et historique](../Bienvenue.md#sources-et-historique)
+<a id="interface-connectee-2026-11-20"></a>
 
-Revue du **19 novembre 2026** à partir du [code et des ressources du client Swing sur `main` à la révision `788bfb2`][revision]. La [refonte des 28–29 octobre](../../prive/client/SUIVI.md#2829-octobre-2026--identité-visuelle-étendue-au-client-swing) a étendu la palette de l’accueil et du Planning aux écrans métier. Les repères ci-dessous décrivent l’interface à cette révision.
+## Sélecteur, connexion et accueil connecté — 20 novembre 2026
+
+Complément au relevé graphique du 19 novembre : le client `03387cc` réutilise la même identité visuelle en clair et sombre.
+
+`LaunchSelectorWindow` reste modal : Démonstration retourne DEMO, Connexion retourne CONNECTED et la fermeture retourne `null`. `LoginWindow` affiche toujours identifiant, mot de passe et TOTP ; celui-ci est facultatif selon le compte. Les trois éléments partent dans le même POST. Le refus reste générique, sans révéler lequel est incorrect.
+
+Après confirmation de l'identité, le dialogue se ferme automatiquement et `ConnectedHomeWindow` affiche le `HomePanel` existant avec `ApplicationHeader.setIdentity`. Les cartes métier connectées sont désactivées ; elles n'ouvrent pas les écrans CSV.
+
+**Compte déclenche actuellement directement la déconnexion.** Aucun menu ni écran « Mon compte » n'est raccordé. Lise a confirmé ce comportement ; un futur menu ou libellé plus explicite reste une évolution d'ergonomie, sans changement dans cette livraison documentaire.
+
+Le réseau s'exécute hors EDT et les changements Swing sur l'EDT. Une déconnexion non confirmée dispose l'accueil et affiche un avertissement avant le retour au formulaire ou la fermeture. La croix tente aussi le logout puis ferme l'application.
+
+La recette de Lise valide accueil après TOTP, déconnexion/reconnexion et démonstration ; elle n'est pas une nouvelle revue exhaustive de tous les écrans. Voir les [preuves](VALIDATION.md#validation-connexion-2026-11-20).
+
+[Original dans le dépôt client][fiche-client] · [Sources et historique](index.md#lire-les-dates-et-les-preuves)
+
+Revue du **19 novembre 2026** à partir du [code et des ressources du client Swing sur `main` à la révision `788bfb2`][revision]. La refonte des 28–29 octobre a étendu la palette de l’accueil et du Planning aux écrans métier. Les repères ci-dessous décrivent l’interface à cette révision.
 
 ## Marque et ressources
 

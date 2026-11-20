@@ -8,6 +8,23 @@ read_when:
 
 # Feuille de route du projet gestion
 
+<a id="suite-connexion-2026-11-20"></a>
+
+## Parcours connecté : acquis et suite — 20 novembre 2026
+
+**Acquis sur `03387cc` :** contexte connecté, choix du mode, formulaire TOTP, accueil sur `HomePanel`, identité confirmée et déconnexion coordonnée. Lise rapporte 284/284 tests et confirme les deux modes et la reconnexion sur serveur local isolé.
+
+| Chantier | État |
+| --- | --- |
+| Démo CSV | Maintenue dans son assemblage et son dossier fictifs dédiés. Aucun repli implicite depuis CONNECTED. |
+| Accueil et retour au formulaire | Raccordés ; Compte déclenche directement le logout. |
+| Expiration dans Swing | Lecture des échéances disponible ; moniteur, avertissement, traitement central des 401 et retour à la connexion à développer. |
+| Compte et métier connecté | Écran de compte et API métier à raccorder ; cartes connectées désactivées. Droits et périmètres restent contrôlés par le serveur. |
+| Isolation entre utilisateurs | Tests avec HTTP fictif et cookies distincts présents. Poursuivre la recette réelle entre deux comptes et contrôler les tâches/réponses tardives lors de l'ajout des écrans métier. |
+| Exploitation | SUPER_ADMIN fictif et environnement isolé préparés hors dépôt ; aucun provisionnement automatique de production livré. |
+
+Ces acquis ne clôturent pas globalement les anciens repères CPT, ADM ou SOC. Les décisions métier et leurs historiques ci-dessous restent conservés.
+
 <a id="priorite-autorisations-2026-11-05"></a>
 ## Priorité et décisions actualisées — 5 novembre 2026
 
