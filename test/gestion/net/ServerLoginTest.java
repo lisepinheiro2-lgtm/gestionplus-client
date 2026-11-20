@@ -44,11 +44,13 @@ class ServerLoginTest {
 
 	@AfterEach
 	void restoreConfiguration() {
+
 		if (originalUrl == null) {
 			System.clearProperty("gestionplus.server.url");
 		} else {
 			System.setProperty("gestionplus.server.url", originalUrl);
 		}
+
 	}
 
 	@Test
@@ -57,6 +59,7 @@ class ServerLoginTest {
 				Map.of("Set-Cookie", "JSESSIONID=fictitious_anonymous; Path=/; HttpOnly; SameSite=Lax"));
 		Reply login = new Reply(200, "",
 				Map.of("Set-Cookie", "JSESSIONID=fictitious_authenticated; Path=/; HttpOnly; SameSite=Lax"));
+
 		try (var server = new LoopbackHttpFixture(csrf, login, json(200, CURRENT_USER))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD,
 					"001234");
@@ -72,12 +75,14 @@ class ServerLoginTest {
 			assertTrue(authenticatedCookie.contains("JSESSIONID=fictitious_authenticated"));
 			assertFalse(authenticatedCookie.contains("JSESSIONID=fictitious_anonymous"));
 		}
+
 	}
 
 	@Test
 	void encodesCredentialsWithoutChangingSpacesUnicodeOrLeadingTotpZeroes() throws Exception {
 		String userName = "élise+& =%";
 		String password = " Fictitious+&=é% ";
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(200, CURRENT_USER))) {
 			assertEquals(LoginStatus.AUTHENTICATED,
@@ -85,12 +90,14 @@ class ServerLoginTest {
 			assertEquals(Map.of("username", userName, "password", password, "totp", "001234"),
 					formParameters(server.requests().get(1)));
 		}
+
 	}
 
 	@ParameterizedTest
 	@NullAndEmptySource
 	@ValueSource(strings = { " ", "\t" })
 	void omitsAnAbsentOptionalTotpCode(String totpCode) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(200, CURRENT_USER))) {
 			assertEquals(LoginStatus.AUTHENTICATED,
@@ -98,22 +105,26 @@ class ServerLoginTest {
 			assertEquals(Map.of("username", "fictitious_user", "password", FICTITIOUS_PASSWORD),
 					formParameters(server.requests().get(1)));
 		}
+
 	}
 
 	@ParameterizedTest
 	@CsvSource({ "401,REJECTED", "403,CSRF_REJECTED", "503,UNAVAILABLE", "400,FAILED", "500,FAILED",
 			"302,FAILED" })
 	void mapsLoginRefusalsWithoutReadingTheCurrentUser(int status, LoginStatus expected) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(status, "{}"))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
 			assertEquals(expected, result.status());
 			assertNull(result.userName());
 			assertEquals(2, server.requests().size());
 		}
+
 	}
 
 	@Test
 	void rejectsAnUnauthenticatedSessionDespiteASuccessfulLoginResponse() throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(401, "{\"code\":\"AUTHENTICATION_REQUIRED\"}"))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
@@ -121,54 +132,64 @@ class ServerLoginTest {
 			assertNull(result.userName());
 			assertEquals("GET /api/auth/me HTTP/1.1", server.requests().get(2).requestLine());
 		}
+
 	}
 
 	@ParameterizedTest
 	@ValueSource(ints = { 400, 403, 500, 503 })
 	void neverAuthenticatesWhenTheCurrentUserLookupFails(int status) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(status, "{}"))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
 			assertEquals(LoginStatus.FAILED, result.status());
 			assertNull(result.userName());
 		}
+
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = { "null", "{}", "{\"userName\":null}", "{\"userName\":\"   \"}", "not-json",
 			"\"fictitious_user\"" })
 	void neverAuthenticatesWithAnInvalidCurrentUserResponse(String body) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(200, body))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
 			assertEquals(LoginStatus.FAILED, result.status());
 			assertNull(result.userName());
 		}
+
 	}
 
 	@ParameterizedTest
 	@ValueSource(ints = { 401, 403, 503 })
 	void doesNotSendCredentialsWhenTheCsrfRequestIsRefused(int status) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(status, "{}"))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
 			assertEquals(LoginStatus.FAILED, result.status());
 			assertEquals(List.of("GET /api/auth/csrf HTTP/1.1"),
 					server.requests().stream().map(CapturedRequest::requestLine).toList());
 		}
+
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = { "null", "{}", "not-json" })
 	void doesNotSendCredentialsWhenTheCsrfResponseIsInvalid(String body) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, body))) {
 			LoginResult result = login(connectionFor(server.baseUrl()), "fictitious_user", FICTITIOUS_PASSWORD, "");
 			assertEquals(LoginStatus.FAILED, result.status());
 			assertEquals(1, server.requests().size());
 		}
+
 	}
 
 	@Test
 	void keepsTheConfiguredContextPathThroughoutAuthentication() throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), json(200, ""),
 				json(200, CURRENT_USER))) {
 			assertEquals(LoginStatus.AUTHENTICATED,
@@ -178,45 +199,55 @@ class ServerLoginTest {
 					"POST /fictitious-context/login HTTP/1.1", "GET /fictitious-context/api/auth/me HTTP/1.1"),
 					server.requests().stream().map(CapturedRequest::requestLine).toList());
 		}
+
 	}
 
 	@Test
 	void returnsEmptyForAnUnauthenticatedCurrentUserRequest() throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(401, "{}"))) {
 			assertTrue(connectionFor(server.baseUrl()).fetchCurrentUser().isEmpty());
 			assertEquals("GET /api/auth/me HTTP/1.1", server.requests().getFirst().requestLine());
 		}
+
 	}
 
 	@Test
 	void readsTheCurrentUserWithoutRejectingAdditionalResponseFields() throws Exception {
+
 		try (var server = new LoopbackHttpFixture(
 				json(200, "{\"userName\":\"fictitious_user\",\"additionalField\":\"fictitious_value\"}"))) {
 			assertEquals("fictitious_user", connectionFor(server.baseUrl()).fetchCurrentUser().orElseThrow());
 		}
+
 	}
 
 	@ParameterizedTest
 	@ValueSource(strings = { "null", "{}", "{\"userName\":null}", "{\"userName\":\"\"}",
 			"{\"userName\":\"   \"}", "not-json" })
 	void rejectsAnInvalidCurrentUserResponseAsAnIoFailure(String body) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(200, body))) {
 			assertThrows(IOException.class, () -> connectionFor(server.baseUrl()).fetchCurrentUser());
 		}
+
 	}
 
 	@ParameterizedTest
 	@ValueSource(ints = { 403, 404, 503 })
 	void reportsUnexpectedCurrentUserStatusesAsIoFailures(int status) throws Exception {
+
 		try (var server = new LoopbackHttpFixture(json(status, "{}"))) {
 			assertThrows(IOException.class, () -> connectionFor(server.baseUrl()).fetchCurrentUser());
 		}
+
 	}
 
 	@Test
 	void doesNotShareAuthenticatedCookiesWithAnotherConnection() throws Exception {
 		Reply login = new Reply(200, "",
 				Map.of("Set-Cookie", "JSESSIONID=fictitious_authenticated; Path=/; HttpOnly; SameSite=Lax"));
+
 		try (var server = new LoopbackHttpFixture(json(200, VALID_TOKEN), login,
 				json(200, CURRENT_USER), json(401, "{}"))) {
 			ServerConnection authenticated = connectionFor(server.baseUrl());
@@ -225,6 +256,7 @@ class ServerLoginTest {
 			assertTrue(connectionFor(server.baseUrl()).fetchCurrentUser().isEmpty());
 			assertFalse(server.requests().get(3).headers().containsKey("cookie"));
 		}
+
 	}
 
 	private ServerConnection connectionFor(String baseUrl) {
@@ -234,21 +266,25 @@ class ServerLoginTest {
 
 	private LoginResult login(ServerConnection connection, String userName, String password, String totpCode) {
 		char[] suppliedPassword = password.toCharArray();
+
 		try {
 			return connection.login(userName, suppliedPassword, totpCode);
 		} finally {
 			Arrays.fill(suppliedPassword, '\0');
 		}
+
 	}
 
 	private Map<String, String> formParameters(CapturedRequest request) {
 		Map<String, String> parameters = new LinkedHashMap<>();
+
 		for (String parameter : request.body().split("&")) {
 			String[] pair = parameter.split("=", 2);
 			String name = URLDecoder.decode(pair[0], StandardCharsets.UTF_8);
 			String value = URLDecoder.decode(pair[1], StandardCharsets.UTF_8);
 			assertNull(parameters.put(name, value));
 		}
+
 		return parameters;
 	}
 }

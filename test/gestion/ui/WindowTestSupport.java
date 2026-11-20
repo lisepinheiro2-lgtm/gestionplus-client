@@ -26,6 +26,7 @@ final class WindowTestSupport {
 	}
 
 	static void onEdt(Runnable action) throws Exception {
+
 		if (SwingUtilities.isEventDispatchThread()) {
 			action.run();
 			return;
@@ -36,6 +37,7 @@ final class WindowTestSupport {
 		} catch (InvocationTargetException failure) {
 			rethrow(failure.getCause());
 		}
+
 	}
 
 	static <T extends Component> T component(Container root, Class<T> type, Predicate<T> condition) {
@@ -65,6 +67,7 @@ final class WindowTestSupport {
 		});
 		guard.setRepeats(false);
 		SwingUtilities.invokeLater(() -> {
+
 			try {
 				action.run();
 			} catch (Throwable thrown) {
@@ -72,33 +75,41 @@ final class WindowTestSupport {
 			} finally {
 				window.dispose();
 			}
+
 		});
 		guard.start();
 
 		try {
 			T result = show.get();
+
 			if (failure.get() != null) {
 				rethrow(failure.get());
 			}
+
 			return result;
 		} finally {
 			guard.stop();
 			window.dispose();
 		}
+
 	}
 
 	private static Stream<Component> descendants(Component root) {
 		return Stream.concat(Stream.of(root), root instanceof Container container
-				? Arrays.stream(container.getComponents()).flatMap(WindowTestSupport::descendants) : Stream.empty());
+				? Arrays.stream(container.getComponents()).flatMap(WindowTestSupport::descendants)
+				: Stream.empty());
 	}
 
 	private static void rethrow(Throwable failure) {
+
 		if (failure instanceof Error error) {
 			throw error;
 		}
+
 		if (failure instanceof RuntimeException exception) {
 			throw exception;
 		}
+
 		throw new AssertionError(failure);
 	}
 }

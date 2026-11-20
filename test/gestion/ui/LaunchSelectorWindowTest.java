@@ -47,9 +47,11 @@ class LaunchSelectorWindowTest {
 
 	@AfterEach
 	void closeWindow() throws Exception {
+
 		if (window != null) {
 			onEdt(window::dispose);
 		}
+
 	}
 
 	@Test
@@ -103,7 +105,8 @@ class LaunchSelectorWindowTest {
 			var action = connectedButton.getActionMap().get(key);
 			assertNotNull(action);
 			assertEquals(LaunchMode.CONNECTED, duringModal(window, window::askLaunchMode,
-					() -> action.actionPerformed(new ActionEvent(connectedButton, ActionEvent.ACTION_PERFORMED, "enter"))));
+					() -> action
+							.actionPerformed(new ActionEvent(connectedButton, ActionEvent.ACTION_PERFORMED, "enter"))));
 		});
 	}
 

@@ -79,14 +79,18 @@ class LoginControllerTest {
 
 	@AfterEach
 	void closeWindow() throws Exception {
+
 		if (window != null) {
 			onEdt(() -> {
+
 				if (controller != null) {
 					controller.close();
 				}
+
 				window.dispose();
 			});
 		}
+
 	}
 
 	@Test
@@ -155,9 +159,11 @@ class LoginControllerTest {
 	void anUnexpectedFailureRestoresTheFormAndAllowsAnotherAttempt() throws Exception {
 		AtomicInteger attempts = new AtomicInteger();
 		connect((userName, suppliedPassword, code) -> {
+
 			if (attempts.incrementAndGet() == 1) {
 				throw new IllegalArgumentException("Fictitious private diagnostic");
 			}
+
 			return new LoginResult(LoginStatus.AUTHENTICATED, userName);
 		});
 		onEdt(() -> {
@@ -232,9 +238,12 @@ class LoginControllerTest {
 		CountDownLatch finished = new CountDownLatch(1);
 		connect((userName, suppliedPassword, code) -> {
 			started.countDown();
+
 			try {
 				boolean cancelled = false;
+
 				while (true) {
+
 					try {
 						allowFinish.await();
 						break;
@@ -242,16 +251,21 @@ class LoginControllerTest {
 						cancelled = true;
 						interrupted.countDown();
 					}
+
 				}
+
 				if (cancelled) {
 					Thread.currentThread().interrupt();
 				}
+
 				return new LoginResult(LoginStatus.AUTHENTICATED, userName);
 			} finally {
 				finished.countDown();
 			}
+
 		});
 		FutureTask<Outcome> modal = openModal();
+
 		try {
 			onEdt(() -> {
 				setInputs();
@@ -270,6 +284,7 @@ class LoginControllerTest {
 		} finally {
 			allowFinish.countDown();
 		}
+
 	}
 
 	private void connect(LoginOperation operation) throws Exception {
@@ -314,22 +329,28 @@ class LoginControllerTest {
 			}
 
 			private void checkStatus() {
+
 				if (expected.equals(status.getText())) {
 					observed.countDown();
 				}
+
 			}
 		};
 		onEdt(() -> {
 			status.getDocument().addDocumentListener(listener);
+
 			if (expected.equals(status.getText())) {
 				observed.countDown();
 			}
+
 		});
+
 		try {
 			assertTrue(observed.await(5, TimeUnit.SECONDS), "État de connexion attendu non affiché : " + expected);
 		} finally {
 			onEdt(() -> status.getDocument().removeDocumentListener(listener));
 		}
+
 	}
 
 	@FunctionalInterface
@@ -369,9 +390,11 @@ class LoginControllerTest {
 		}
 
 		private void recordAccess() {
+
 			if (!SwingUtilities.isEventDispatchThread()) {
 				backgroundAccess.set(true);
 			}
+
 		}
 	}
 }

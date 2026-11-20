@@ -61,9 +61,11 @@ class LoginWindowTest {
 
 	@AfterEach
 	void closeWindow() throws Exception {
+
 		if (window != null) {
 			onEdt(window::dispose);
 		}
+
 	}
 
 	@Test
@@ -88,11 +90,13 @@ class LoginWindowTest {
 				assertEquals("fictitious_user", window.getUsername());
 				assertEquals("001234", window.getTotpCode());
 				char[] supplied = window.getPassword();
+
 				try {
 					assertArrayEquals(FICTITIOUS_PASSWORD.toCharArray(), supplied);
 				} finally {
 					Arrays.fill(supplied, '\0');
 				}
+
 				submissions.incrementAndGet();
 			});
 			setInputs("fictitious_user", FICTITIOUS_PASSWORD, "001234");
@@ -128,6 +132,7 @@ class LoginWindowTest {
 	void refusesBlankUsernamesBeforeCallingTheAction() throws Exception {
 		onEdt(() -> {
 			window.setLoginAction(submissions::incrementAndGet);
+
 			for (String value : List.of("", "   ", "\t")) {
 				setInputs(value, FICTITIOUS_PASSWORD, "123456");
 				submit.doClick(0);
@@ -135,6 +140,7 @@ class LoginWindowTest {
 				assertEquals("Saisissez votre identifiant.", status.getText());
 				assertFalse(progress.isVisible());
 			}
+
 		});
 	}
 
@@ -182,6 +188,7 @@ class LoginWindowTest {
 	void refusesMalformedTotpCodesWithoutSilentlyRewritingThem() throws Exception {
 		onEdt(() -> {
 			window.setLoginAction(submissions::incrementAndGet);
+
 			for (String value : List.of("12345", "1234567", "12a456", "１２３４５６", " 12345", "12345 ")) {
 				setInputs("fictitious_user", FICTITIOUS_PASSWORD, value);
 				submit.doClick(0);
@@ -190,6 +197,7 @@ class LoginWindowTest {
 				assertEquals("Le code d’authentification doit contenir exactement 6 chiffres.", status.getText());
 				assertTrue(totp.isEnabled());
 			}
+
 		});
 	}
 
@@ -302,11 +310,13 @@ class LoginWindowTest {
 			char[] copy = window.getPassword();
 			Arrays.fill(copy, '\0');
 			char[] current = window.getPassword();
+
 			try {
 				assertArrayEquals(FICTITIOUS_PASSWORD.toCharArray(), current);
 			} finally {
 				Arrays.fill(current, '\0');
 			}
+
 		});
 	}
 

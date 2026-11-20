@@ -43,6 +43,7 @@ class DemoDataInitializerTest {
 		for (String name : FILE_NAMES) {
 			assertArrayEquals(resourceBytes(name), Files.readAllBytes(target.resolve(name)), name);
 		}
+
 	}
 
 	@Test
@@ -55,6 +56,7 @@ class DemoDataInitializerTest {
 		for (String name : FILE_NAMES.stream().filter(name -> !name.equals("clients.csv")).toList()) {
 			assertArrayEquals(resourceBytes(name), Files.readAllBytes(directory.resolve(name)), name);
 		}
+
 	}
 
 	@Test
@@ -75,6 +77,7 @@ class DemoDataInitializerTest {
 			assertArrayEquals(contents.get(name), Files.readAllBytes(directory.resolve(name)), name);
 			assertEquals(marker, Files.getLastModifiedTime(directory.resolve(name)), name);
 		}
+
 	}
 
 	@Test
@@ -107,9 +110,11 @@ class DemoDataInitializerTest {
 	}
 
 	private byte[] resourceBytes(String name) throws IOException {
+
 		try (var input = getClass().getResourceAsStream("/demo-data/" + name)) {
 			assertNotNull(input, "Ressource de démonstration absente : " + name);
 			return input.readAllBytes();
 		}
+
 	}
 }
