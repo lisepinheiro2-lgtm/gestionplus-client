@@ -4,10 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -20,12 +23,12 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-final class WindowTestSupport {
+public final class WindowTestSupport {
 
 	private WindowTestSupport() {
 	}
 
-	static void onEdt(Runnable action) throws Exception {
+	public static void onEdt(Runnable action) throws Exception {
 
 		if (SwingUtilities.isEventDispatchThread()) {
 			action.run();
@@ -36,6 +39,31 @@ final class WindowTestSupport {
 			SwingUtilities.invokeAndWait(action);
 		} catch (InvocationTargetException failure) {
 			rethrow(failure.getCause());
+		}
+
+	}
+
+	static <T extends Window> T awaitWindow(Class<T> type, Predicate<T> condition) throws Exception {
+		CompletableFuture<T> found = new CompletableFuture<>();
+		Timer watcher = new Timer(20, event -> {
+
+			try {
+				Arrays.stream(Window.getWindows()).filter(Window::isShowing).filter(type::isInstance).map(type::cast)
+						.filter(condition).findFirst().ifPresent(found::complete);
+			} catch (Throwable failure) {
+				found.completeExceptionally(failure);
+			}
+
+		});
+		onEdt(() -> {
+			watcher.setInitialDelay(0);
+			watcher.start();
+		});
+
+		try {
+			return found.get(5, TimeUnit.SECONDS);
+		} finally {
+			onEdt(watcher::stop);
 		}
 
 	}

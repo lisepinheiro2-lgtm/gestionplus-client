@@ -200,7 +200,7 @@ class LoginControllerTest {
 	}
 
 	@Test
-	void verifiedSuccessReturnsTheAuthenticatedOutcome() throws Exception {
+	void verifiedSuccessClosesTheDialogAndReturnsTheAuthenticatedOutcomeWithoutAnotherUserAction() throws Exception {
 		connect((userName, suppliedPassword, code) -> new LoginResult(LoginStatus.AUTHENTICATED, userName));
 		FutureTask<Result> modal = openModal();
 		onEdt(() -> {
@@ -208,10 +208,15 @@ class LoginControllerTest {
 			submit.doClick(0);
 		});
 		awaitStatus("Connexion réussie.");
-		onEdt(() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING)));
 		Result result = modal.get(5, TimeUnit.SECONDS);
 		assertEquals(Outcome.AUTHENTICATED, result.outcome());
 		assertEquals("fictitious_user", result.user().userName());
+		onEdt(() -> {
+			assertFalse(window.isDisplayable());
+			assertEquals("", window.getUsername());
+			assertEquals(0, window.getPassword().length);
+			assertEquals("", window.getTotpCode());
+		});
 	}
 
 	@Test

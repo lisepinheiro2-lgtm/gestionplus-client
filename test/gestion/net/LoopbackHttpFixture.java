@@ -17,28 +17,28 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-final class LoopbackHttpFixture implements AutoCloseable {
+public final class LoopbackHttpFixture implements AutoCloseable {
 
 	private final ServerSocket server;
 	private final ExecutorService executor;
 	private final Future<List<CapturedRequest>> exchange;
 
-	LoopbackHttpFixture(Reply... replies) throws IOException {
+	public LoopbackHttpFixture(Reply... replies) throws IOException {
 		server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
 		server.setSoTimeout(5_000);
 		executor = Executors.newSingleThreadExecutor();
 		exchange = executor.submit(() -> serve(List.of(replies)));
 	}
 
-	String baseUrl() {
+	public String baseUrl() {
 		return "http://127.0.0.1:" + server.getLocalPort();
 	}
 
-	List<CapturedRequest> requests() throws Exception {
+	public List<CapturedRequest> requests() throws Exception {
 		return exchange.get(5, TimeUnit.SECONDS);
 	}
 
-	static Reply json(int status, String body) {
+	public static Reply json(int status, String body) {
 		return new Reply(status, body, Map.of());
 	}
 
@@ -127,9 +127,9 @@ final class LoopbackHttpFixture implements AutoCloseable {
 		return List.copyOf(requests);
 	}
 
-	record Reply(int status, String body, Map<String, String> headers) {
+	public record Reply(int status, String body, Map<String, String> headers) {
 	}
 
-	record CapturedRequest(String requestLine, Map<String, String> headers, String body) {
+	public record CapturedRequest(String requestLine, Map<String, String> headers, String body) {
 	}
 }
