@@ -3,7 +3,7 @@ package gestion;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,6 +16,7 @@ import gestion.app.ConnectedApplicationContext;
 import gestion.app.DemoDataInitializer;
 import gestion.app.LoginController;
 import gestion.app.SessionCoordinator;
+import gestion.app.SessionCoordinator.LogoutResult;
 import gestion.net.ServerConnection;
 import gestion.net.ServerConnection.CurrentUser;
 import gestion.ui.ConnectedHomeWindow;
@@ -36,9 +37,11 @@ public final class Main {
 
 		try {
 
+			LaunchMode initialMode = null;
+
 			while (true) {
 
-				LaunchSelection selection = selectLaunchMode();
+				LaunchSelection selection = selectLaunchMode(initialMode);
 
 				if (selection.mode() == LaunchMode.DEMO) {
 					openDemo();
@@ -46,7 +49,12 @@ public final class Main {
 				}
 
 				if (selection.mode() == LaunchMode.CONNECTED) {
-					runConnectedSession(selection);
+
+					if (runConnectedSession(selection)) {
+						return;
+					}
+
+					initialMode = LaunchMode.CONNECTED;
 					continue;
 				}
 
@@ -83,20 +91,33 @@ public final class Main {
 
 	}
 
-	private static void runConnectedSession(LaunchSelection selection) throws InterruptedException {
+	private static boolean runConnectedSession(LaunchSelection selection)
+			throws InterruptedException, ExecutionException {
 
 		ConnectedApplicationContext context = new ConnectedApplicationContext(selection.connection(),
 				selection.user());
-		CountDownLatch sessionEnded = new CountDownLatch(1);
+		CompletableFuture<LogoutResult> sessionEnded = new CompletableFuture<>();
 		AtomicReference<ConnectedHomeWindow> window = new AtomicReference<>();
-		SessionCoordinator coordinator = new SessionCoordinator(context, () -> {
-			ConnectedHomeWindow current = window.get();
+		SessionCoordinator coordinator = new SessionCoordinator(context, result -> {
 
-			if (current != null) {
-				current.dispose();
+			try {
+				ConnectedHomeWindow current = window.getAndSet(null);
+
+				if (current != null) {
+					current.dispose();
+				}
+
+				if (!result.serverConfirmed()) {
+					JOptionPane.showMessageDialog(null,
+							"La déconnexion a été effectuée sur cet ordinateur.\n"
+									+ "Le serveur n'a pas confirmé la fermeture de la session.",
+							"Déconnexion non confirmée", JOptionPane.WARNING_MESSAGE);
+				}
+
+			} finally {
+				sessionEnded.complete(result);
 			}
 
-			sessionEnded.countDown();
 		});
 
 		SwingUtilities.invokeLater(() -> {
@@ -106,17 +127,22 @@ public final class Main {
 			homeWindow.show();
 		});
 
-		sessionEnded.await();
+		return sessionEnded.get().quitAfter();
 
 	}
 
-	private static LaunchSelection selectLaunchMode() throws InterruptedException, ExecutionException {
+	private static LaunchSelection selectLaunchMode(LaunchMode initialMode)
+			throws InterruptedException, ExecutionException {
 
 		FutureTask<LaunchSelection> selection = new FutureTask<>(() -> {
 			UIUtils.installLookAndFeel();
+			LaunchMode mode = initialMode;
 
 			while (true) {
-				LaunchMode mode = new LaunchSelectorWindow().askLaunchMode();
+
+				if (mode == null) {
+					mode = new LaunchSelectorWindow().askLaunchMode();
+				}
 
 				if (mode != LaunchMode.CONNECTED) {
 					return new LaunchSelection(mode, null, null);
@@ -138,6 +164,7 @@ public final class Main {
 						return new LaunchSelection(null, null, null);
 
 					case MODE_SELECTION:
+						mode = null;
 						break;
 					}
 

@@ -181,6 +181,7 @@ public final class LoginController implements AutoCloseable {
 		switch (result.status()) {
 		case AUTHENTICATED:
 			window.showSuccess();
+			window.dispose();
 			break;
 
 		case REJECTED:
