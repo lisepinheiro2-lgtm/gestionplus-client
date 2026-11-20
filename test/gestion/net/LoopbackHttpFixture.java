@@ -76,7 +76,17 @@ final class LoopbackHttpFixture implements AutoCloseable {
 					headers.merge(line.substring(0, separator).toLowerCase(Locale.ROOT),
 							line.substring(separator + 1).strip(), (first, second) -> first + "; " + second);
 				}
-				requests.add(new CapturedRequest(requestLine, Map.copyOf(headers)));
+				int length = Integer.parseInt(headers.getOrDefault("content-length", "0"));
+				char[] requestBody = new char[length];
+				int received = 0;
+				while (received < length) {
+					int count = input.read(requestBody, received, length - received);
+					if (count < 0) {
+						throw new IOException("Corps HTTP fictif incomplet.");
+					}
+					received += count;
+				}
+				requests.add(new CapturedRequest(requestLine, Map.copyOf(headers), new String(requestBody)));
 				byte[] body = reply.status() == 204 ? new byte[0] : reply.body().getBytes(StandardCharsets.UTF_8);
 				StringBuilder response = new StringBuilder("HTTP/1.1 ").append(reply.status()).append(" Test\r\n")
 						.append("Content-Type: application/json; charset=UTF-8\r\n")
@@ -99,6 +109,6 @@ final class LoopbackHttpFixture implements AutoCloseable {
 	record Reply(int status, String body, Map<String, String> headers) {
 	}
 
-	record CapturedRequest(String requestLine, Map<String, String> headers) {
+	record CapturedRequest(String requestLine, Map<String, String> headers, String body) {
 	}
 }

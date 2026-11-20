@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -69,7 +68,8 @@ public class ServerConnection {
 
 			switch (response.statusCode()) {
 			case 200:
-				return new LoginResult(LoginStatus.AUTHENTICATED, null);
+				return fetchCurrentUser().map(user -> new LoginResult(LoginStatus.AUTHENTICATED, user))
+						.orElseGet(() -> new LoginResult(LoginStatus.REJECTED, null));
 
 			case 401:
 				return new LoginResult(LoginStatus.REJECTED, null);
@@ -111,7 +111,7 @@ public class ServerConnection {
 		String json = response.body();
 		CurrentUser currentUser = mapper.readValue(json, CurrentUser.class);
 
-		if (currentUser.userName() == null || currentUser.userName().isBlank()) {
+		if (currentUser == null || currentUser.userName() == null || currentUser.userName().isBlank()) {
 			throw new IOException("Le nom d'utilisateur ne peut être null ou vide");
 		}
 
