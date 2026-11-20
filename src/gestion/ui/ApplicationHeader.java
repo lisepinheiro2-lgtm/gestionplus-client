@@ -33,6 +33,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 	private final JLabel brand = new JLabel("Gestion +");
 	private final JLabel description = new JLabel("Organisation & remplacements");
 	private final JLabel page = new JLabel("Accueil", JLabel.CENTER);
+	private final JLabel identityLabel = new JLabel();
 	private final JButton home;
 	private final JButton account;
 	private Runnable accountAction;
@@ -112,9 +113,11 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		account.setToolTipText("Compte utilisateur — bientôt disponible");
 		account.getAccessibleContext().setAccessibleName("Compte utilisateur");
 		account.addActionListener(event -> {
+
 			if (accountAction != null) {
 				accountAction.run();
 			}
+
 		});
 
 		GridBagConstraints constraints = new GridBagConstraints();
@@ -122,6 +125,9 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		constraints.gridy = 0;
 		controls.add(theme, constraints);
 		constraints.gridx = 1;
+		constraints.insets = new Insets(0, 10, 0, 0);
+		controls.add(identityLabel, constraints);
+		constraints.gridx = 2;
 		constraints.insets = new Insets(0, 10, 0, 0);
 		controls.add(account, constraints);
 		add(identity, BorderLayout.WEST);
@@ -173,6 +179,12 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		account.setToolTipText(action == null ? "Compte utilisateur — bientôt disponible" : "Compte utilisateur");
 	}
 
+	public void setIdentity(String userName) {
+		identityLabel.setText(userName);
+		identityLabel.setToolTipText("Connecté en tant que " + userName);
+		identityLabel.getAccessibleContext().setAccessibleName("Utilisateur connecté : " + userName);
+	}
+
 	public void setPageTitle(String title) {
 		page.setText(title);
 		navigation.setVisible(!"Accueil".equals(title));
@@ -214,6 +226,8 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		brand.setForeground(foreground);
 		description.setForeground(muted);
 		page.setForeground(muted);
+		identityLabel.setForeground(muted);
+		identityLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 		setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, border),
 				BorderFactory.createEmptyBorder(2, 32, 2, 24)));
 		theme.setSelected(dark);
