@@ -83,6 +83,27 @@ class LoginWindowTest {
 	}
 
 	@Test
+	void displaysASessionNoticeOnAFreshFormAndDoesNotCarryItIntoAnotherOpening() throws Exception {
+		onEdt(() -> {
+			window.setLoginAction(submissions::incrementAndGet);
+			window.setSessionNotice("Votre session n’est plus valide. Veuillez vous reconnecter.");
+			duringModal(window, () -> {
+				window.showLogin();
+				return null;
+			}, () -> {
+				assertEquals("", window.getUsername());
+				assertEquals(0, window.getPassword().length);
+				assertTrue(status.getText().contains("session n’est plus valide"));
+				assertTrue(submit.isEnabled());
+			});
+			duringModal(window, () -> {
+				window.showLogin();
+				return null;
+			}, () -> assertEquals("Saisissez vos informations de connexion.", status.getText()));
+		});
+	}
+
+	@Test
 	void submitsAllThreeValuesOnTheSwingThreadWithoutChangingLeadingZeroes() throws Exception {
 		onEdt(() -> {
 			window.setLoginAction(() -> {

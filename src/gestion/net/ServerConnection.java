@@ -10,6 +10,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +32,8 @@ public class ServerConnection implements AutoCloseable {
 	private final CookieManager cookies;
 	private final ObjectMapper mapper;
 	private final AtomicBoolean closed = new AtomicBoolean();
+	private volatile Runnable sessionInvalidationHandler = () -> {
+	};
 
 	public ServerConnection() {
 		this(URI.create(System.getProperty("gestionplus.server.url", "http://localhost:8080")));
@@ -57,7 +62,7 @@ public class ServerConnection implements AutoCloseable {
 
 		URI endpoint = endpoint("/api/auth/csrf");
 		HttpRequest request = HttpRequest.newBuilder(endpoint).GET().timeout(Duration.ofSeconds(5)).build();
-		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		HttpResponse<String> response = send(request);
 		int status = response.statusCode();
 
 		if (status != 200) {
@@ -90,7 +95,7 @@ public class ServerConnection implements AutoCloseable {
 			CsrfToken csrfToken = fetchCsrfToken();
 			String formBody = buildFormBody(userName, password, totpCode);
 			HttpRequest request = buildLoginRequest(csrfToken, formBody);
-			HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+			HttpResponse<String> response = send(request);
 
 			if (response.statusCode() == 200) {
 				return fetchCurrentUser().map(user -> new LoginResult(LoginStatus.AUTHENTICATED, user))
@@ -113,7 +118,7 @@ public class ServerConnection implements AutoCloseable {
 
 		URI endpoint = endpoint("/api/auth/me");
 		HttpRequest request = HttpRequest.newBuilder(endpoint).GET().timeout(Duration.ofSeconds(5)).build();
-		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		HttpResponse<String> response = send(request);
 		int status = response.statusCode();
 
 		if (status == 401) {
@@ -135,9 +140,15 @@ public class ServerConnection implements AutoCloseable {
 	}
 
 	public SessionExpiration fetchSessionExpiration() throws IOException, InterruptedException {
+		return fetchSessionObservation().expiration();
+	}
+
+	public SessionObservation fetchSessionObservation() throws IOException, InterruptedException {
 		HttpRequest request = HttpRequest.newBuilder(endpoint("/api/auth/session"))
 				.GET().timeout(Duration.ofSeconds(5)).build();
-		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		long started = System.nanoTime();
+		HttpResponse<String> response = send(request);
+		Duration roundTrip = Duration.ofNanos(System.nanoTime() - started);
 		if (response.statusCode() != 200) {
 			throw apiFailure(response);
 		}
@@ -145,7 +156,19 @@ public class ServerConnection implements AutoCloseable {
 		if (expiration == null) {
 			throw new IOException("Réponse d'échéance de session invalide.");
 		}
-		return expiration;
+		Instant serverTime;
+		try {
+			serverTime = response.headers().firstValue("Date")
+					.map(value -> Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(value)))
+					.orElseGet(Instant::now);
+		} catch (DateTimeParseException failure) {
+			throw new IOException("Date de réponse du serveur invalide.", failure);
+		}
+		return new SessionObservation(expiration, serverTime, roundTrip);
+	}
+
+	public void setSessionInvalidationHandler(Runnable handler) {
+		sessionInvalidationHandler = Objects.requireNonNull(handler);
 	}
 
 	public void logout() throws IOException, InterruptedException {
@@ -162,7 +185,7 @@ public class ServerConnection implements AutoCloseable {
 				.header(csrfToken.headerName(), csrfToken.token())
 				.POST(HttpRequest.BodyPublishers.noBody())
 				.timeout(Duration.ofSeconds(5)).build();
-		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		HttpResponse<String> response = send(request);
 		if (response.statusCode() != 204) {
 			throw apiFailure(response);
 		}
@@ -171,6 +194,8 @@ public class ServerConnection implements AutoCloseable {
 	@Override
 	public void close() {
 		if (closed.compareAndSet(false, true)) {
+			sessionInvalidationHandler = () -> {
+			};
 			try {
 				http.shutdownNow();
 			} finally {
@@ -179,6 +204,14 @@ public class ServerConnection implements AutoCloseable {
 				}
 			}
 		}
+	}
+
+	private HttpResponse<String> send(HttpRequest request) throws IOException, InterruptedException {
+		HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+		if (response.statusCode() == 401 && !closed.get()) {
+			sessionInvalidationHandler.run();
+		}
+		return response;
 	}
 
 	private HttpRequest buildLoginRequest(CsrfToken csrfToken, String formBody) throws IOException {

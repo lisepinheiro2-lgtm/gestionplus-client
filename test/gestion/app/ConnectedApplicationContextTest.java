@@ -49,6 +49,20 @@ class ConnectedApplicationContextTest {
 	}
 
 	@Test
+	void businessOperationsRequireBothServerAvailabilityAndAnActiveContext() {
+		assertFalse(context.canStartBusinessOperation());
+		context.setAvailable(true);
+		assertTrue(context.canStartBusinessOperation());
+		context.setAvailable(false);
+		assertFalse(context.canStartBusinessOperation());
+		context.setAvailable(true);
+		context.beginClosing();
+		assertFalse(context.canStartBusinessOperation());
+		context.close();
+		assertFalse(context.canStartBusinessOperation());
+	}
+
+	@Test
 	void requiresBothTheConnectionAndTheConfirmedIdentity() {
 		assertThrows(NullPointerException.class, () -> new ConnectedApplicationContext(null, user));
 		assertThrows(NullPointerException.class, () -> new ConnectedApplicationContext(connection, null));
@@ -132,5 +146,28 @@ class ConnectedApplicationContextTest {
 			closeCalls.incrementAndGet();
 			super.close();
 		}
+	}
+
+	@Test
+	void closesItsRegisteredSessionResourcesOnceBeforeReleasingTheConnection() {
+		AtomicInteger released = new AtomicInteger();
+		context.onClose(() -> {
+			assertEquals(SessionState.CLOSED, context.sessionState());
+			assertEquals(0, connection.closeCalls.get());
+			released.incrementAndGet();
+		});
+		context.close();
+		context.close();
+		assertEquals(1, released.get());
+		assertEquals(1, connection.closeCalls.get());
+	}
+
+	@Test
+	void registeringAResourceAfterClosureReleasesItImmediately() {
+		context.close();
+		AtomicInteger released = new AtomicInteger();
+		context.onClose(released::incrementAndGet);
+		assertEquals(1, released.get());
+		assertEquals(1, connection.closeCalls.get());
 	}
 }

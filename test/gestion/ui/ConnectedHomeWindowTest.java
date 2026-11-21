@@ -23,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +34,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import gestion.app.ConnectedApplicationContext;
+import gestion.app.SessionStatus;
 import gestion.net.ServerConnection;
 import gestion.net.ServerConnection.CurrentUser;
 
@@ -43,6 +46,7 @@ class ConnectedHomeWindowTest {
 	private JFrame frame;
 	private final AtomicInteger accountRequests = new AtomicInteger();
 	private final AtomicInteger closeRequests = new AtomicInteger();
+	private final AtomicInteger retryRequests = new AtomicInteger();
 
 	@BeforeEach
 	void initialize() throws Exception {
@@ -51,7 +55,8 @@ class ConnectedHomeWindowTest {
 				new CurrentUser("fictitious_confirmed_user"));
 		onEdt(() -> {
 			Set<Window> previous = Set.copyOf(Arrays.asList(Window.getWindows()));
-			window = new ConnectedHomeWindow(context, accountRequests::incrementAndGet, closeRequests::incrementAndGet);
+			window = new ConnectedHomeWindow(context, accountRequests::incrementAndGet, closeRequests::incrementAndGet,
+					retryRequests::incrementAndGet);
 			frame = Arrays.stream(Window.getWindows()).filter(JFrame.class::isInstance).map(JFrame.class::cast)
 					.filter(candidate -> !previous.contains(candidate)).findFirst().orElseThrow();
 		});
@@ -76,7 +81,8 @@ class ConnectedHomeWindowTest {
 	void reusesHomePanelAndDisplaysTheConfirmedIdentityInTheSharedHeader() throws Exception {
 		onEdt(() -> {
 			BorderLayout layout = assertInstanceOf(BorderLayout.class, frame.getContentPane().getLayout());
-			assertInstanceOf(HomePanel.class, layout.getLayoutComponent(BorderLayout.CENTER));
+			assertInstanceOf(JPanel.class, layout.getLayoutComponent(BorderLayout.CENTER));
+			assertNotNull(component(frame, HomePanel.class, candidate -> true));
 			assertInstanceOf(ApplicationHeader.class, layout.getLayoutComponent(BorderLayout.NORTH));
 			JLabel identity = named(frame, JLabel.class, "Utilisateur connecté : fictitious_confirmed_user");
 			assertEquals("fictitious_confirmed_user", identity.getText());
@@ -165,15 +171,57 @@ class ConnectedHomeWindowTest {
 	}
 
 	@Test
-	void requiresTheContextAndBothUserActionsBeforeCreatingAWindow() throws Exception {
+	void requiresTheContextAndAllUserActionsBeforeCreatingAWindow() throws Exception {
 		onEdt(() -> {
 			assertThrows(NullPointerException.class, () -> new ConnectedHomeWindow(null, () -> {
 			}, () -> {
+			}, () -> {
 			}));
 			assertThrows(NullPointerException.class, () -> new ConnectedHomeWindow(context, null, () -> {
+			}, () -> {
 			}));
 			assertThrows(NullPointerException.class, () -> new ConnectedHomeWindow(context, () -> {
+			}, null, () -> {
+			}));
+			assertThrows(NullPointerException.class, () -> new ConnectedHomeWindow(context, () -> {
+			}, () -> {
 			}, null));
+		});
+	}
+
+	@Test
+	void hidesHomeWhileTheSessionIsUnknownOrUnavailableAndRestoresItAfterVerification() throws Exception {
+		onEdt(() -> {
+			window.show();
+			HomePanel home = component(frame, HomePanel.class, candidate -> true);
+			assertFalse(home.isShowing());
+			window.showSessionStatus(new SessionStatus(SessionStatus.State.ACTIVE, 900));
+			assertTrue(home.isShowing());
+			window.showSessionStatus(new SessionStatus(SessionStatus.State.UNAVAILABLE, 800));
+			assertFalse(home.isShowing());
+			JButton retry = named(frame, JButton.class, "Réessayer la connexion au serveur");
+			assertTrue(retry.isShowing());
+			assertTrue(retry.isFocusable());
+			retry.doClick(0);
+			assertEquals(1, retryRequests.get());
+			assertTrue(context.isActive());
+			window.showSessionStatus(new SessionStatus(SessionStatus.State.ACTIVE, 1_000));
+			assertTrue(home.isShowing());
+			assertFalse(retry.isShowing());
+		});
+	}
+
+	@Test
+	void warnsWithoutHidingHomeAndDoesNotAcceptAnUpdateAfterTheContextHasClosed() throws Exception {
+		onEdt(() -> {
+			window.show();
+			window.showSessionStatus(new SessionStatus(SessionStatus.State.EXPIRING, 65));
+			assertTrue(component(frame, HomePanel.class, candidate -> true).isShowing());
+			assertTrue(named(frame, JTextArea.class, "État de la session").getText().contains("1 min 05 s"));
+			window.showSessionStatus(new SessionStatus(SessionStatus.State.CLOSING, 0));
+			context.close();
+			window.showSessionStatus(new SessionStatus(SessionStatus.State.ACTIVE, 900));
+			assertFalse(component(frame, HomePanel.class, candidate -> true).isShowing());
 		});
 	}
 }

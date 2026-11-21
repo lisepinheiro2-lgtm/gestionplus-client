@@ -17,6 +17,7 @@ import gestion.app.DemoDataInitializer;
 import gestion.app.LoginController;
 import gestion.app.SessionCoordinator;
 import gestion.app.SessionCoordinator.LogoutResult;
+import gestion.app.SessionCoordinator.EndReason;
 import gestion.net.ServerConnection;
 import gestion.net.ServerConnection.CurrentUser;
 import gestion.ui.ConnectedHomeWindow;
@@ -38,10 +39,11 @@ public final class Main {
 		try {
 
 			LaunchMode initialMode = null;
+			String loginNotice = null;
 
 			while (true) {
 
-				LaunchSelection selection = selectLaunchMode(initialMode);
+				LaunchSelection selection = selectLaunchMode(initialMode, loginNotice);
 
 				if (selection.mode() == LaunchMode.DEMO) {
 					openDemo();
@@ -50,11 +52,18 @@ public final class Main {
 
 				if (selection.mode() == LaunchMode.CONNECTED) {
 
-					if (runConnectedSession(selection)) {
+					LogoutResult result = runConnectedSession(selection);
+					if (result.quitAfter()) {
 						return;
 					}
 
 					initialMode = LaunchMode.CONNECTED;
+					loginNotice = switch (result.reason()) {
+					case LOGOUT -> null;
+					case SESSION_REJECTED -> "Votre session n’est plus valide. Veuillez vous reconnecter.";
+					case LOCAL_EXPIRATION -> "La session a été fermée sur cet ordinateur à son échéance."
+							+ " Le serveur n’a pas confirmé sa fermeture.";
+					};
 					continue;
 				}
 
@@ -91,7 +100,7 @@ public final class Main {
 
 	}
 
-	private static boolean runConnectedSession(LaunchSelection selection)
+	private static LogoutResult runConnectedSession(LaunchSelection selection)
 			throws InterruptedException, ExecutionException {
 
 		ConnectedApplicationContext context = new ConnectedApplicationContext(selection.connection(),
@@ -107,7 +116,7 @@ public final class Main {
 					current.dispose();
 				}
 
-				if (!result.serverConfirmed()) {
+				if (result.reason() == EndReason.LOGOUT && !result.serverConfirmed()) {
 					JOptionPane.showMessageDialog(null,
 							"La déconnexion a été effectuée sur cet ordinateur.\n"
 									+ "Le serveur n'a pas confirmé la fermeture de la session.",
@@ -118,25 +127,49 @@ public final class Main {
 				sessionEnded.complete(result);
 			}
 
+		}, status -> {
+			ConnectedHomeWindow current = window.get();
+			if (current != null) {
+				current.showSessionStatus(status);
+			}
 		});
 
 		SwingUtilities.invokeLater(() -> {
-			ConnectedHomeWindow homeWindow = new ConnectedHomeWindow(context, () -> coordinator.requestLogout(false),
-					() -> coordinator.requestLogout(true));
-			window.set(homeWindow);
-			homeWindow.show();
+			if (!context.isActive()) {
+				return;
+			}
+			try {
+				ConnectedHomeWindow homeWindow = new ConnectedHomeWindow(context, () -> coordinator.requestLogout(false),
+						() -> coordinator.requestLogout(true), coordinator::refreshSession);
+				window.set(homeWindow);
+				homeWindow.show();
+				coordinator.startMonitoring();
+			} catch (RuntimeException failure) {
+				sessionEnded.completeExceptionally(failure);
+			}
 		});
 
-		return sessionEnded.get().quitAfter();
+		try {
+			return sessionEnded.get();
+		} finally {
+			context.close();
+			SwingUtilities.invokeLater(() -> {
+				ConnectedHomeWindow current = window.getAndSet(null);
+				if (current != null) {
+					current.dispose();
+				}
+			});
+		}
 
 	}
 
-	private static LaunchSelection selectLaunchMode(LaunchMode initialMode)
+	private static LaunchSelection selectLaunchMode(LaunchMode initialMode, String loginNotice)
 			throws InterruptedException, ExecutionException {
 
 		FutureTask<LaunchSelection> selection = new FutureTask<>(() -> {
 			UIUtils.installLookAndFeel();
 			LaunchMode mode = initialMode;
+			String notice = loginNotice;
 
 			while (true) {
 
@@ -152,7 +185,12 @@ public final class Main {
 				boolean transferred = false;
 
 				try {
-					LoginController login = new LoginController(new LoginWindow(), connection);
+					LoginWindow loginWindow = new LoginWindow();
+					LoginController login = new LoginController(loginWindow, connection);
+					if (notice != null) {
+						loginWindow.setSessionNotice(notice);
+						notice = null;
+					}
 					LoginController.Result result = login.showLogin();
 
 					switch (result.outcome()) {

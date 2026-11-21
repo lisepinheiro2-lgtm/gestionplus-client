@@ -51,6 +51,7 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 	private final JLabel totpLabel;
 	private final JLabel totpHint;
 	private final JTextArea statusMessage;
+	private String sessionNotice;
 	private final JProgressBar progressBar;
 	private final JTextField usernameField;
 	private final JPasswordField passwordField;
@@ -222,8 +223,16 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 		usernameField.setText("");
 		clearSensitiveFields();
 		resetDisplay();
+		if (sessionNotice != null) {
+			setDisplayState(DisplayState.ERROR, sessionNotice);
+			sessionNotice = null;
+		}
 		applyAppTheme(UIUtils.isDarkMode());
 		setVisible(true);
+	}
+
+	public void setSessionNotice(String message) {
+		sessionNotice = Objects.requireNonNull(message);
 	}
 
 	public boolean isModeSelectionRequested() {

@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public final class LoopbackHttpFixture implements AutoCloseable {
 
@@ -24,10 +25,14 @@ public final class LoopbackHttpFixture implements AutoCloseable {
 	private final Future<List<CapturedRequest>> exchange;
 
 	public LoopbackHttpFixture(Reply... replies) throws IOException {
+		this(request -> null, replies);
+	}
+
+	public LoopbackHttpFixture(Function<CapturedRequest, Reply> recurringReply, Reply... replies) throws IOException {
 		server = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
 		server.setSoTimeout(5_000);
 		executor = Executors.newSingleThreadExecutor();
-		exchange = executor.submit(() -> serve(List.of(replies)));
+		exchange = executor.submit(() -> serve(List.of(replies), recurringReply));
 	}
 
 	public String baseUrl() {
@@ -59,10 +64,12 @@ public final class LoopbackHttpFixture implements AutoCloseable {
 
 	}
 
-	private List<CapturedRequest> serve(List<Reply> replies) throws IOException {
+	private List<CapturedRequest> serve(List<Reply> replies, Function<CapturedRequest, Reply> recurringReply)
+			throws IOException {
 		List<CapturedRequest> requests = new ArrayList<>();
+		int nextReply = 0;
 
-		for (Reply reply : replies) {
+		while (nextReply < replies.size()) {
 
 			try (Socket client = server.accept()) {
 				client.setSoTimeout(5_000);
@@ -71,7 +78,7 @@ public final class LoopbackHttpFixture implements AutoCloseable {
 				String requestLine = input.readLine();
 
 				if (requestLine == null) {
-					throw new IOException("Requête HTTP fictive absente.");
+					continue;
 				}
 
 				Map<String, String> headers = new LinkedHashMap<>();
@@ -102,7 +109,13 @@ public final class LoopbackHttpFixture implements AutoCloseable {
 					received += count;
 				}
 
-				requests.add(new CapturedRequest(requestLine, Map.copyOf(headers), new String(requestBody)));
+				CapturedRequest request = new CapturedRequest(requestLine, Map.copyOf(headers), new String(requestBody));
+				requests.add(request);
+				Reply reply = recurringReply.apply(request);
+				boolean recurring = reply != null;
+				if (reply == null) {
+					reply = replies.get(nextReply++);
+				}
 				byte[] body = reply.status() == 204 ? new byte[0] : reply.body().getBytes(StandardCharsets.UTF_8);
 				StringBuilder response = new StringBuilder("HTTP/1.1 ").append(reply.status()).append(" Test\r\n")
 						.append("Content-Type: application/json; charset=UTF-8\r\n")
@@ -117,9 +130,15 @@ public final class LoopbackHttpFixture implements AutoCloseable {
 				}
 
 				response.append("\r\n");
-				client.getOutputStream().write(response.toString().getBytes(StandardCharsets.ISO_8859_1));
-				client.getOutputStream().write(body);
-				client.getOutputStream().flush();
+				try {
+					client.getOutputStream().write(response.toString().getBytes(StandardCharsets.ISO_8859_1));
+					client.getOutputStream().write(body);
+					client.getOutputStream().flush();
+				} catch (IOException cancelled) {
+					if (!recurring) {
+						throw cancelled;
+					}
+				}
 			}
 
 		}
