@@ -1,14 +1,44 @@
 ---
-summary: "284/284 tests client rapportés par Lise sur 03387cc et recette réelle locale avec TOTP ; preuves et limites distinguées."
+summary: "381/381 client avant revue rapportés par Lise ; contrôles ciblés de Codex puis confirmation sans nouveau total."
 read_when:
   - "examiner les validations les régressions et les vérifications restant à autoriser"
 ---
 
 # Tests et état des validations
 
+<a id="reprise-2026-11-21"></a>
+
+## Validations de session, structures et identité — 21 novembre 2026
+
+Sources relues : client `45f02c6`, `9b5a895`, correction identité `53d110d` ; serveur structures `63046e8`, correction HIBP `72aa7f4`.
+
+### Validations attribuées — 21 novembre 2026
+
+Ces résultats proviennent de la mission transmise par Lise ; ils ne sont pas réexécutés pendant cette actualisation documentaire.
+
+| État | Auteur et résultat | Portée et limites |
+| --- | --- | --- |
+| Avant les deux corrections | Lise : **924/924 serveur** sur `63046e8` et **381/381 client** sur `9b5a895`. | Suites complètes rapportées ; totaux non transposés aux commits suivants. |
+| Avant corrections, tests ciblés serveur | Codex : **24 tests sur PostgreSQL jetable**. | Distincts d’une suite complète. |
+| Avant corrections, tests ciblés client | Codex : **130 tests client**. | Portées distinctes : composants, fenêtres Swing et serveurs HTTP fictifs. Ces derniers ne constituent pas une recette Swing contre Spring Boot. |
+| Après correction HIBP `72aa7f4` | Codex : **19/19** dans `PwnedPasswordsCheckerTest`, client HTTP simulé. | Aucun serveur, PostgreSQL ni migration lancé pour ces dernières vérifications. |
+| Après correction identité `53d110d` | Codex : **7/7** dans `ApplicationHeaderIdentityTest`, sur classpath **et** en mode modulaire. | Même jeu vérifié dans les deux modes ; aucun nouveau total global calculé. |
+| Confirmation ultérieure | Lise : **« tout est vert »**. | Aucun nouveau total communiqué ; ne pas inventer les nouveaux totaux des suites complètes. |
+
+Les 900/900 serveur du 19 novembre et les 284/284 client du 20 novembre restent des résultats historiques avec leurs dates et versions. Aucun test, build, serveur, migration, commit ou push n’est lancé pendant cette mission documentaire.
+
+### Tests présents et limites de preuve
+
+`SessionScheduleTest`, `SessionMonitoringTest` et `SessionMonitoringConcurrencyTest` portent sur les échéances, pannes, refus et réponses concurrentes. `StructureContextTest`, `StructureSelectionControllerTest`, `StructureConnectionTest`, `StructureSelectorPanelTest` et `ConnectedSessionLifecycleTest` portent sur contexte, sélection, retrait d’accès, isolation et nettoyage. `ApplicationHeaderIdentityTest` vérifie le texte exact, l’absence de rendu HTML et le maintien après thème/remplacement d’identité.
+
+Distinguer les tests de composants, les fenêtres Swing avec affichage et les échanges sur HTTP fictif. La recette réelle du 20 novembre reste datée : elle ne valide pas automatiquement les nouveaux parcours de structures, les pannes ou le changement entre deux comptes sur le vrai serveur. Le métier connecté et les fiches autorisées restent à raccorder et à valider.
+
+
 <a id="validation-connexion-2026-11-20"></a>
 
 ## Connexion, sessions et preuves — 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 | Preuve | Résultat et attribution | Portée |
 | --- | --- | --- |

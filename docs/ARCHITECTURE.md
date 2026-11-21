@@ -1,5 +1,5 @@
 ---
-summary: "Client 03387cc : modes DEMO et CONNECTED, JSON/Java Time, contexte de session, accueil partagé et déconnexion ; historique conservé."
+summary: "Client 53d110d : sessions actives, structures autorisées et isolation des contextes."
 read_when:
   - "retrouver les responsabilités des classes et les formats CSV du client"
   - "préparer une évolution vers le serveur sans confondre historique et cible"
@@ -7,9 +7,32 @@ read_when:
 
 # Architecture du projet gestion
 
+<a id="reprise-2026-11-21"></a>
+
+## Sessions actives et structures — 21 novembre 2026
+
+**État relu : `53d110d`**, après le suivi des sessions `45f02c6` et le sélecteur `9b5a895`. Les reprises du 20 novembre ci-dessous sont historiques.
+
+| Responsabilité | Classes et comportement présents |
+| --- | --- |
+| Échéances | `SessionCoordinator`, `SessionSchedule`, `SessionObservation` : lecture active de `/api/auth/session`, suivi de `warnAt`/`expiresAt`, horloge monotone et temps d’aller-retour pris en compte. `SessionBanner` présente état et avertissement. |
+| Panne et refus | CHECKING/UNAVAILABLE suspendent l’usage connecté. `ServerConnection.send` centralise les 401 et notifie le coordinateur ; la fin de session nettoie le contexte et revient au formulaire. |
+| Déconnexion | Compte déclenche le logout hors EDT ; nettoyage local même sans confirmation serveur, annulation des vérifications, fermeture du transport et suppression des cookies. Nouveau formulaire avec une nouvelle connexion ; la croix demande de quitter. |
+| Structures | `StructureSelectionController`, `StructureSelectionState`, `StructureSelectorPanel` et `ServerConnection.fetchAccessibleStructures`/`fetchAccessibleStructure` consomment les deux GET authentifiés. |
+| Zéro, une ou plusieurs | Zéro accès explicite ; sélection automatique si une seule structure ; choix explicite si plusieurs au premier chargement. Une actualisation dans le même contexte peut conserver un choix encore autorisé. |
+| Sélection et refus | Liste et sélection vivent uniquement dans `ConnectedApplicationContext`, sans préférence persistée. Un choix vérifie l’accès par le détail serveur ; après refus 404, rechargement de la liste sans conserver la sélection refusée. |
+| Concurrence et comptes | Annulation des requêtes en cours ; génération de demande et état du contexte rejettent les réponses obsolètes. Suspension, fermeture ou changement de compte nettoient liste/sélection. Contexte et transport propres à chaque connexion. |
+
+Le serveur contrôle les droits et l’isolation à chaque requête ; le choix Swing ne confère aucune permission. Les **cartes métier connectées restent désactivées** : le sélecteur ne transforme pas les écrans CSV en écrans connectés. La **démo CSV reste indépendante**, sans repli implicite depuis CONNECTED.
+
+`ApplicationHeader.setIdentity` impose le **texte brut** avec `html.disable` : les balises d’un identifiant ne sont plus interprétées comme du HTML (`53d110d`, `ApplicationHeaderIdentityTest`). Voir [validations](VALIDATION.md#reprise-2026-11-21) et [suite](ROADMAP.md#reprise-2026-11-21).
+
+
 <a id="sessions-connectees-2026-11-20"></a>
 
 ## Deux modes et cycle connecté — 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 État du client `03387cc`, après le socle `31fe887`, le raccordement `82ad003` et les corrections `6c3fd47`. Cette section décrit le code actuel ; les relevés d'octobre ci-dessous restent historiques.
 

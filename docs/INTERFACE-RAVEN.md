@@ -1,5 +1,5 @@
 ---
-summary: "Interface au 20 novembre : sélecteur, TOTP, HomePanel partagé, identité et déconnexion ; revue graphique du 19 conservée."
+summary: "Interface au 21 novembre : suivi de session, structures autorisées et identité en texte brut."
 read_when:
   - "travailler sur le design les thèmes et la navigation Swing"
 ---
@@ -8,9 +8,22 @@ read_when:
 
 # Identité graphique de Gestion+ dans Swing
 
+<a id="reprise-2026-11-21"></a>
+
+## Interface connectée actualisée — 21 novembre 2026
+
+Sur `53d110d`, `SessionBanner` affiche vérification de session, avertissement d’échéance et indisponibilité. Une panne suspend l’usage connecté ; un 401 centralisé ou la fin de session nettoie le contexte et ramène au formulaire, sans repli CSV. Compte garde son action directe de déconnexion.
+
+`StructureSelectorPanel` présente zéro accès, une structure sélectionnée automatiquement ou plusieurs avec choix explicite. La liste vient du serveur, le choix est vérifié et un refus déclenche son actualisation. Liste, sélection et réponses tardives sont nettoyées ou écartées à la suspension/fermeture et entre comptes ; la sélection reste uniquement dans le contexte connecté.
+
+`ApplicationHeader` impose le **texte brut** pour l’identité : les balises d’un identifiant sont affichées telles quelles, avec maintien lors des changements de thème (`ApplicationHeaderIdentityTest`). Les cartes métier restent désactivées ; les écrans CSV ne deviennent pas connectés par le sélecteur. Voir [architecture](ARCHITECTURE.md#reprise-2026-11-21) et [preuves attribuées](VALIDATION.md#reprise-2026-11-21).
+
+
 <a id="interface-connectee-2026-11-20"></a>
 
 ## Sélecteur, connexion et accueil connecté — 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 Complément au relevé graphique du 19 novembre : le client `03387cc` réutilise la même identité visuelle en clair et sombre.
 

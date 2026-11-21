@@ -1,8 +1,21 @@
 # Gestion+
 
+<a id="reprise-2026-11-21"></a>
+
+## Sessions et structures autorisées — 21 novembre 2026
+
+État local relu `53d110d` : suivi actif de l’expiration et avertissement, suspension lors d’une panne, 401 centralisés et nettoyage au retour au formulaire. Sélecteur alimenté par les structures autorisées du serveur : zéro accès explicite, sélection automatique si une seule, choix explicite si plusieurs. Sélection dans le seul contexte connecté ; accès vérifié, liste actualisée après refus, demandes annulées et réponses obsolètes écartées pour isoler les comptes.
+
+Identité affichée en texte brut, même avec balises HTML. **Cartes métier connectées désactivées** : le sélecteur ne raccorde pas les écrans CSV. Démo indépendante, sans repli implicite depuis CONNECTED.
+
+Lise rapporte **381/381 client sur `9b5a895`** avant correction identité ; Codex rapporte ensuite **7/7 tests d’identité**, sur classpath et en mode modulaire. « Tout est vert » confirmé ensuite par Lise ne fournit aucun nouveau total. Voir [preuves et limites](docs/VALIDATION.md#reprise-2026-11-21), [architecture](docs/ARCHITECTURE.md#reprise-2026-11-21) et [tâches restantes](docs/ROADMAP.md#reprise-2026-11-21). Aucun test, build ou lancement pendant cette actualisation.
+
+
 <a id="connexion-2026-11-20"></a>
 
 ## Connexion et démonstration — 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 Le sélecteur graphique est l'entrée commune. La démo ouvre les écrans métier sur les CSV fictifs dédiés. Connexion envoie identifiant, mot de passe et TOTP au serveur ; après succès et confirmation de l'identité, l'accueil existant s'ouvre avec les cartes métier connectées désactivées.
 
@@ -16,7 +29,7 @@ Gestion+ est un projet personnel de portfolio, développé progressivement autou
 
 Ce dépôt contient le **client de bureau Java Swing**, avec deux modes : **Démonstration**, autonome sur CSV fictifs, et **Connexion**, raccordé à l'authentification et aux sessions du [serveur Spring Boot](https://github.com/lisepinheiro2-lgtm/gestionplus-server). Le serveur conserve les contrôles d'identité, de droits et de périmètre.
 
-> **En développement actif — état `03387cc` relu le 20 novembre 2026.** Lise rapporte 284/284 tests réussis et une recette réelle locale : TOTP, accueil, déconnexion/reconnexion et démo. Les API métier connectées et le suivi Swing de l'expiration restent à développer.
+> **En développement actif — état `53d110d` relu le 21 novembre 2026.** Sessions et structures autorisées raccordées ; cartes métier connectées désactivées. Preuves et tâches restantes distinguées dans la reprise ci-dessus.
 
 🚀 **[Télécharger et essayer la démo Windows](https://github.com/lisepinheiro2-lgtm/gestionplus-client/releases/tag/v0.1.0-demo)**
 *Démonstration du client Swing avec données fictives et stockage CSV local, sans connexion au serveur.*

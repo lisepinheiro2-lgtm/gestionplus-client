@@ -1,6 +1,6 @@
 ---
 title: "Documentation du client Swing"
-summary: "Reprise client 03387cc : TOTP local réel, déconnexion, démo et 284/284 rapportés par Lise."
+summary: "Reprise au 21 novembre : sessions actives, structures autorisées et identité brute."
 read_when:
   - "commencer une séance sur le client ou retrouver un document"
   - "préparer la réunion du client et du serveur dans Gestion+"
@@ -8,9 +8,26 @@ read_when:
 
 # Documentation du client Swing
 
+<a id="reprise-2026-11-21"></a>
+
+## Reprise du 21 novembre 2026
+
+Client relu `53d110d` : sessions suivies activement et sélecteur des structures autorisées raccordé ; identité affichée en texte brut. Démo autonome et cartes métier connectées désactivées.
+
+- [Sessions, sélection et isolation des contextes](ARCHITECTURE.md#reprise-2026-11-21).
+- [Résultats attribués : 381/381 avant revue, puis contrôles ciblés](VALIDATION.md#reprise-2026-11-21).
+- [Interface et identité sans HTML](INTERFACE-RAVEN.md#reprise-2026-11-21).
+- [Tâches ouvertes et fiches connectées](ROADMAP.md#reprise-2026-11-21).
+- [Décisions d’activation, premier enrôlement TOTP et confirmations](vision-ensemble.md#reprise-2026-11-21).
+
+Aucun test ni lancement pendant cette mise à jour ; les anciens jalons ci-dessous restent historiques.
+
+
 <a id="reprise-connexion-2026-11-20"></a>
 
 ## Reprise du 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 Le client `03387cc` propose démonstration sur CSV fictifs et connexion HTTP au serveur. Lise rapporte **284/284 tests réussis** et confirme la recette locale avec TOTP, accueil, déconnexion/reconnexion et maintien de la démo.
 

@@ -10,9 +10,31 @@ read_when:
 
 # Gestion+ — vision d’ensemble
 
+<a id="reprise-2026-11-21"></a>
+
+## État commun et décisions — 21 novembre 2026
+
+Client `53d110d` : suivi actif des sessions, 401 centralisés et sélecteur des structures autorisées. Serveur `72aa7f4` : GET `/api/structures` et `/api/structures/{structureID}` authentifiés, réponses minimales et autorisations côté serveur. La sélection ne donne aucun droit supplémentaire ; démo CSV indépendante et cartes métier connectées désactivées. Aucune nouvelle migration pour ce lot.
+
+Les services d’accès, transfert ADMIN, succession volontaire, cycle des comptes et responsabilité MANAGER sont présents côté serveur. Leurs parcours HTTP/Swing complets et la création/fermeture complète des structures restent des travaux distincts. Voir [architecture](ARCHITECTURE.md#reprise-2026-11-21), [validations attribuées](VALIDATION.md#reprise-2026-11-21) et [avancement serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/AVANCEMENT.md#reprise-2026-11-21).
+
+### Décisions validées, réalisations encore attendues
+
+- **Refus d’invitation :** HTTP **403** générique avec un code métier d’activation commun aux invitations invalides, expirées ou déjà utilisées. Le nom du code n’est pas inventé ici. L’arbitrage est acquis ; son implémentation reste ouverte.
+- **Premier enrôlement TOTP :** après activation vérifiée, dans un parcours restreint sans accès métier, avec une preuve distincte, temporaire et à usage unique. Valider le nouvel authentificateur avant confirmation, puis connexion normale. Ce parcours reste à implémenter ; il ne crée pas un second écran TOTP de connexion.
+- **MFA :** obligatoire pour SUPER_ADMIN, ADMIN, SECURITY_OFFICER, R_H, MANAGER et SECRETARY, facultatif pour les autres selon les rôles documentés et leur cumul. Le formulaire de connexion conserve son unique POST contenant identifiant, mot de passe et TOTP.
+- **Confirmation renforcée :** revérifier le mot de passe et un TOTP frais. Preuve à usage unique, valable au maximum **cinq minutes**, liée au compte, à sa version de sécurité, à l’action et au récapitulatif confirmé. Contrôle et consommation atomiques à l’exécution ; **deux preuves** pour une succession SUPER_ADMIN. Ces cinq minutes sont un choix de conception Gestion+, pas une durée imposée par OWASP ou le NIST.
+
+`HmacActivationIdentityVerifier` existe déjà. `MfaEnrollmentVerifier` et `PrivilegedConfirmationVerifier` sont des contrats présents dont les implémentations opérationnelles restent attendues. FIDO2/WebAuthn demeure une évolution à étudier pour les comptes privilégiés.
+
+Les décisions et limites antérieures sont conservées. Premier déploiement sur une seule instance ; multiserveur, préférences par compte, planning/interventions connectés, documents sensibles et ADMIN_EMERGENCY restent suivis sans nouvelle réalisation annoncée.
+
+
 <a id="connexion-locale-2026-11-20"></a>
 
 ## Premier parcours connecté réel — 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 Le raccordement client–serveur n'est plus entièrement à construire : `03387cc` côté client communique avec les routes d'authentification/session du serveur `b2ca9e3`. Lise valide manuellement connexion TOTP, accueil avec identité, déconnexion, formulaire et reconnexion sur PostgreSQL local isolé. La démonstration CSV reste fonctionnelle et distincte.
 

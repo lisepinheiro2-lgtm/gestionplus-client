@@ -8,9 +8,28 @@ read_when:
 
 # Feuille de route du projet gestion
 
+<a id="reprise-2026-11-21"></a>
+
+## Reprise et tâches ouvertes — 21 novembre 2026
+
+**Présents sur `53d110d` :** suivi actif des échéances, avertissement, suspension en cas de panne, traitement central des 401, retour au formulaire et nettoyage du contexte ; sélecteur des structures autorisées, vérification du choix, actualisation après refus et rejet des réponses obsolètes. Démo CSV indépendante et cartes métier connectées désactivées.
+
+Les [validations](VALIDATION.md#reprise-2026-11-21) distinguent les 381/381 client et 924/924 serveur rapportés avant revue, les contrôles ciblés de Codex et la confirmation sans nouveau total après corrections.
+
+- [ ] Fiche salarié (`ADM01`) : téléphone/e-mail et distinction entre coordonnées salarié et compte pour invitation/activation ; API autorisée à raccorder.
+- [ ] Fiche client (`CLI02`, `ADM03`) : clarifier coordonnées client, contact d’urgence et gestionnaire d’interventions avant raccordement.
+- [ ] Fiches connectées : valider saisie, sauvegarde/relecture et autorisations serveur.
+
+Préférences par compte (`CPT04`), planning, interventions et documents sensibles restent à réaliser côté connecté. Création/fermeture des structures et ADMIN_EMERGENCY suivent des chantiers distincts. Les services serveur d’accès, transfert ADMIN, succession volontaire, cycle des comptes et responsabilité MANAGER existent ; leurs parcours complets restent à raccorder.
+
+Les **13 tâches ouvertes** de l’ancien gist, l’annexe multiserveur et les réserves conservées sont regroupées dans l’[avancement serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/AVANCEMENT.md#reprise-2026-11-21). Les [décisions d’activation/MFA et de confirmation](vision-ensemble.md#reprise-2026-11-21) restent des tâches tant qu’elles ne sont pas implémentées. Premier déploiement sur une seule instance.
+
+
 <a id="suite-connexion-2026-11-20"></a>
 
 ## Parcours connecté : acquis et suite — 20 novembre 2026
+
+**Historique du 20 novembre ; lire la reprise du 21 novembre ci-dessus pour l’état courant.**
 
 **Acquis sur `03387cc` :** contexte connecté, choix du mode, formulaire TOTP, accueil sur `HomePanel`, identité confirmée et déconnexion coordonnée. Lise rapporte 284/284 tests et confirme les deux modes et la reconnexion sur serveur local isolé.
 
