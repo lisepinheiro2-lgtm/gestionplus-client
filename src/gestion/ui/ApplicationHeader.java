@@ -126,6 +126,7 @@ public final class ApplicationHeader extends JPanel implements AppThemeAware {
 		controls.add(theme, constraints);
 		constraints.gridx = 1;
 		constraints.insets = new Insets(0, 10, 0, 0);
+		identityLabel.putClientProperty("html.disable", Boolean.TRUE);
 		controls.add(identityLabel, constraints);
 		constraints.gridx = 2;
 		constraints.insets = new Insets(0, 10, 0, 0);
