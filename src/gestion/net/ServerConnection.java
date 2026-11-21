@@ -236,6 +236,32 @@ public class ServerConnection implements AutoCloseable {
 		}
 	}
 
+	public void requestActivationChallenge(ActivationInvitation invitation) throws IOException, InterruptedException {
+		Objects.requireNonNull(invitation);
+		postActivation(invitation, "/sms-challenge", Map.of("token", invitation.token()));
+	}
+
+	public void completeActivation(ActivationInvitation invitation, String userName, char[] password, String code)
+			throws IOException, InterruptedException {
+		Objects.requireNonNull(invitation);
+		Objects.requireNonNull(password);
+		postActivation(invitation, "/activation", Map.of("token", invitation.token(), "proof", code,
+				"userName", userName, "password", new String(password)));
+	}
+
+	private void postActivation(ActivationInvitation invitation, String suffix, Map<String, String> body)
+			throws IOException, InterruptedException {
+		CsrfToken csrf = fetchCsrfToken();
+		HttpRequest request = HttpRequest.newBuilder(endpoint("/api/invitations/" + invitation.invitationID() + suffix))
+				.header("Content-Type", "application/json; charset=UTF-8").header(csrf.headerName(), csrf.token())
+				.timeout(Duration.ofSeconds(20)).POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body),
+						StandardCharsets.UTF_8)).build();
+		HttpResponse<String> response = send(request);
+		if (response.statusCode() != 200) {
+			throw apiFailure(response);
+		}
+	}
+
 	@Override
 	public void close() {
 		if (closed.compareAndSet(false, true)) {
@@ -305,7 +331,16 @@ public class ServerConnection implements AutoCloseable {
 		} catch (IOException failure) {
 			code = null;
 		}
-		return new HttpApiException(response.statusCode(), code);
+		Duration retryAfter = null;
+		try {
+			long seconds = Long.parseLong(response.headers().firstValue("Retry-After").orElse("0"));
+			if (seconds > 0 && seconds <= 86400) {
+				retryAfter = Duration.ofSeconds(seconds);
+			}
+		} catch (NumberFormatException invalidDelay) {
+			retryAfter = null;
+		}
+		return new HttpApiException(response.statusCode(), code, retryAfter);
 	}
 
 	private LoginStatus loginStatus(HttpApiException failure) {

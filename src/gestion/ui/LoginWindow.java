@@ -58,6 +58,8 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 	private final JTextField totpField;
 	private final RavenStyledButton loginButton;
 	private final RavenStyledButton backButton;
+	private final RavenStyledButton activationButton = new RavenStyledButton();
+	private Runnable activationAction;
 	private Runnable loginAction;
 	private DisplayState displayState = DisplayState.UNAVAILABLE;
 	private boolean modeSelectionRequested;
@@ -166,6 +168,14 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 		navigationPanel.setOpaque(false);
 		navigationPanel.add(backButton);
 		navigationPanel.add(loginButton);
+		activationButton.setText("Activer un compte invité");
+		activationButton.setMnemonic(KeyEvent.VK_V);
+		activationButton.setVisible(false);
+		activationButton.addActionListener(event -> {
+			if (activationAction != null && displayState != DisplayState.SUBMITTING) {
+				activationAction.run();
+			}
+		});
 		statusMessage.setFont(subtitle.getFont().deriveFont(12f));
 		statusMessage.setEditable(false);
 		statusMessage.setFocusable(false);
@@ -187,7 +197,11 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 		JPanel footer = new JPanel(new BorderLayout(0, 12));
 		footer.setOpaque(false);
 		footer.add(statusPanel, BorderLayout.CENTER);
-		footer.add(navigationPanel, BorderLayout.SOUTH);
+		JPanel actions = new JPanel(new BorderLayout(0, 10));
+		actions.setOpaque(false);
+		actions.add(activationButton, BorderLayout.NORTH);
+		actions.add(navigationPanel, BorderLayout.SOUTH);
+		footer.add(actions, BorderLayout.SOUTH);
 		loginPanel.add(footer, BorderLayout.SOUTH);
 		getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
 				.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "closeLogin");
@@ -233,6 +247,13 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 
 	public void setSessionNotice(String message) {
 		sessionNotice = Objects.requireNonNull(message);
+	}
+
+	public void setActivationAction(Runnable action) {
+		activationAction = Objects.requireNonNull(action);
+		activationButton.setVisible(true);
+		pack();
+		setLocationRelativeTo(getOwner());
 	}
 
 	public boolean isModeSelectionRequested() {
@@ -318,6 +339,7 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 		UIUtils.applyTheme(totpField);
 		UIUtils.styleActionButton(loginButton, "primary");
 		UIUtils.styleActionButton(backButton, "neutral");
+		UIUtils.styleActionButton(activationButton, "neutral");
 		loginButton.setPreferredSize(new Dimension(loginButton.getPreferredSize().width, 40));
 		backButton.setPreferredSize(new Dimension(backButton.getPreferredSize().width, 40));
 	}
@@ -385,6 +407,7 @@ public final class LoginWindow extends JDialog implements AppThemeAware {
 		passwordField.setEnabled(editable);
 		totpField.setEnabled(editable);
 		backButton.setEnabled(editable);
+		activationButton.setEnabled(editable);
 		loginButton.setEnabled(loginAction != null && editable);
 		loginButton.setText(state == DisplayState.SUBMITTING ? "Connexion…"
 				: state == DisplayState.SUCCESS ? "Connecté" : "Se connecter");

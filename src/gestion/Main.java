@@ -12,6 +12,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 import gestion.app.ApplicationContext;
+import gestion.app.ActivationController;
 import gestion.app.ConnectedApplicationContext;
 import gestion.app.DemoDataInitializer;
 import gestion.app.LoginController;
@@ -22,6 +23,7 @@ import gestion.app.SessionCoordinator.EndReason;
 import gestion.net.ServerConnection;
 import gestion.net.ServerConnection.CurrentUser;
 import gestion.ui.ConnectedHomeWindow;
+import gestion.ui.ActivationWindow;
 import gestion.ui.LaunchMode;
 import gestion.ui.LaunchSelectorWindow;
 import gestion.ui.LoginWindow;
@@ -195,6 +197,14 @@ public final class Main {
 
 				try {
 					LoginWindow loginWindow = new LoginWindow();
+					loginWindow.setActivationAction(() -> {
+						ActivationWindow activationWindow = new ActivationWindow(loginWindow);
+						try (var controller = new ActivationController(activationWindow, new ServerConnection())) {
+							activationWindow.setVisible(true);
+						} finally {
+							activationWindow.dispose();
+						}
+					});
 					LoginController login = new LoginController(loginWindow, connection);
 					if (notice != null) {
 						loginWindow.setSessionNotice(notice);
