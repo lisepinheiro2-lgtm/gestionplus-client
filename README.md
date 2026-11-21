@@ -1,5 +1,20 @@
 # Gestion+
 
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Activer un compte invité — 21 novembre 2026
+
+Sur **`ec08c42`**, la fenêtre de connexion propose « Activer un compte invité ». Le formulaire dédié reçoit le lien complet par e-mail dans un champ masqué ; il en extrait invitation et jeton sans jamais utiliser ce lien comme destination réseau. Les appels restent dirigés vers l’URL serveur configurée.
+
+L’envoi du code SMS est **explicitement demandé**. Le titulaire saisit identifiant, mot de passe, confirmation et code à six chiffres. Réseau hors EDT, une demande en cours, annulation/nettoyage à la fermeture et respect de `Retry-After` sur 429. Le succès confirme l’activation puis permet le retour à la connexion, **sans connexion automatique**.
+
+Codex a exécuté **413/413 tests client sur classpath et 413/413 en mode modulaire**, ainsi que la suite serveur **1 143/1 143**, dont 12 scénarios à deux JVM. Formulaire contrôlé en clair et sombre. Ces validations antérieures sont recoupées avec les empreintes inventoriées ; aucun test n’est relancé ici.
+
+Voir [architecture](docs/ARCHITECTURE.md#activation-sms-swing-2026-11-21), [interface](docs/INTERFACE-RAVEN.md#activation-sms-swing-2026-11-21), [preuves et limites](docs/VALIDATION.md#activation-sms-swing-2026-11-21) et [suite](docs/ROADMAP.md#activation-sms-swing-2026-11-21). Le serveur `165d2e0` fournit défis sécurisés, reprise V28 et adaptateur OVHcloud EU ; compte fournisseur et configuration sont à préparer séparément. Aucun compte réel, appel réel fournisseur ou SMS facturé utilisé pendant les validations. Réception réelle et premier enrôlement TOTP restent distincts ; aucune recette complète jusqu’au téléphone ou déploiement réel validé. Démo CSV indépendante et cartes métier connectées toujours désactivées.
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
+
 <a id="reprise-2026-11-21"></a>
 
 ## Sessions et structures autorisées — 21 novembre 2026

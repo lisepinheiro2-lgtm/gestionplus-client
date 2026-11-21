@@ -1,5 +1,5 @@
 ---
-summary: "Interface au 21 novembre : suivi de session, structures autorisées et identité en texte brut."
+summary: "Interface ec08c42 : activation invitée, lien masqué, actions explicites et thèmes clair/sombre."
 read_when:
   - "travailler sur le design les thèmes et la navigation Swing"
 ---
@@ -7,6 +7,23 @@ read_when:
 <a id="accueil-et-composants-raven"></a>
 
 # Identité graphique de Gestion+ dans Swing
+
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Formulaire d’activation invitée — 21 novembre 2026
+
+Sur `ec08c42`, la fenêtre de connexion propose **« Activer un compte invité »**. Le dialogue dédié `ActivationWindow` reprend composants Raven, icônes, ressources et thèmes existants ; le formulaire a été contrôlé visuellement en **clair et sombre** pendant la validation antérieure de Codex.
+
+Le titulaire colle son **lien complet reçu par e-mail dans un champ masqué**, demande explicitement le SMS, puis renseigne identifiant, mot de passe, confirmation et code à six chiffres. Le fragment fournit l’invitation et le jeton ; le lien collé ne détermine jamais la destination des appels, qui reste le serveur configuré.
+
+Une seule demande peut être en cours, avec progression et commandes adaptées ; le réseau est hors EDT. Refus de saisie, activation refusée, cooldown/quota, 429 et indisponibilité ont des messages dédiés. Sur 429, l’interface respecte `Retry-After`, affiche l’attente et bloque les demandes ; elle ne relance rien automatiquement. Fermeture : annulation, nettoyage du lien/mots de passe/code et fermeture du transport.
+
+Au succès, confirmation affichée et champs sensibles nettoyés ; **« Retour à la connexion »** ramène au formulaire. Aucune connexion automatique. Le premier enrôlement TOTP reste distinct ; les cartes métier connectées restent désactivées et la démo CSV indépendante.
+
+Voir [architecture et responsabilités](ARCHITECTURE.md#activation-sms-swing-2026-11-21) et [preuves et limites](VALIDATION.md#activation-sms-swing-2026-11-21). Le contrôle visuel n’est pas une recette Swing → OVHcloud → téléphone.
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
 
 <a id="reprise-2026-11-21"></a>
 

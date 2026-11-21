@@ -1,11 +1,34 @@
 ---
-summary: "Client 53d110d : sessions actives, structures autorisées et isolation des contextes."
+summary: "Client ec08c42 : activation invitée, lien masqué, transport fixé au serveur et coordination hors EDT."
 read_when:
   - "retrouver les responsabilités des classes et les formats CSV du client"
   - "préparer une évolution vers le serveur sans confondre historique et cible"
 ---
 
 # Architecture du projet gestion
+
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Architecture du parcours d’activation — 21 novembre 2026
+
+**Client relu `ec08c42`, serveur `165d2e0`.** Le parcours d’activation est raccordé ; les cartes métier connectées restent désactivées et la démo CSV indépendante.
+
+| Responsabilité | Classes et frontières |
+| --- | --- |
+| Accès au formulaire | `LoginWindow` expose « Activer un compte invité ». `Main` crée `ActivationWindow` et son `ActivationController` avec une `ServerConnection` propre au parcours, fermée à sa fin. |
+| Présentation | `ActivationWindow`, dialogue modal, réutilise Raven, `UIUtils`, ressources de marque et thèmes. Lien complet reçu par e-mail masqué, identifiant, mot de passe et confirmation, code SMS à six chiffres ; demande de SMS uniquement par action explicite. |
+| Analyse du lien | `ActivationInvitation.fromLink` extrait `invitation=…&token=…` du fragment, avec UUID et jeton Base64URL de 43 caractères. L’UUID seul ne suffit pas. Lien HTTPS (HTTP limité à la boucle locale), sans query ni user-info, longueur bornée. `toString` ne révèle pas le jeton. |
+| Destination réseau | Le lien collé **ne devient jamais une URL de requête**. `ServerConnection` appelle l’URL serveur configurée, obtient le CSRF et effectue les POST `/api/invitations/{invitationID}/sms-challenge` ou `/activation`. |
+| Coordination | `ActivationController` utilise `SwingWorker` : réseau hors EDT, mises à jour sur EDT, une demande en cours au maximum. Fermeture : annulation, rejet des retours tardifs, fermeture du transport ; nettoyage des champs sensibles et des tableaux temporaires de mots de passe. |
+| Résultats | Refus 400/403, conflit métier 409, limite 429 et indisponibilité 503 ont des retours dédiés. `HttpApiException` transporte `Retry-After` ; le formulaire bloque les demandes pendant ce délai, avec attente de 15 minutes si le 429 n’en fournit pas de valide. Aucune répétition automatique. |
+| Fin | Le succès efface les champs sensibles et confirme l’activation ; le bouton « Retour à la connexion » revient au formulaire. **Aucune connexion automatique**, aucun contexte connecté créé par l’activation. |
+
+Le serveur décide de l’acceptation du jeton/code, de la politique du mot de passe, des droits et de la consommation transactionnelle. Un succès de demande SMS signifie acceptation par l’expéditeur, pas réception sur le téléphone. Le premier enrôlement TOTP des comptes concernés reste distinct ; la connexion normale conserve son POST unique avec TOTP.
+
+Voir [interface](INTERFACE-RAVEN.md#activation-sms-swing-2026-11-21), [validations et portée](VALIDATION.md#activation-sms-swing-2026-11-21) et [suite](ROADMAP.md#activation-sms-swing-2026-11-21).
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
 
 <a id="reprise-2026-11-21"></a>
 

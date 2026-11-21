@@ -1,5 +1,5 @@
 ---
-summary: "Demandes par écran et décisions sur structures, droits, archives, facturation, concurrence et secours hors ligne."
+summary: "Activation SMS et Swing raccordés ; réception réelle, enrôlement TOTP et exploitation restent ouverts."
 read_when:
   - "retrouver les fonctionnalités prévues Personnel Clients Planning et Archives"
   - "préparer l’intégration des comptes et permissions avec le serveur"
@@ -7,6 +7,26 @@ read_when:
 ---
 
 # Feuille de route du projet gestion
+
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Activation raccordée : acquis et suite — 21 novembre 2026
+
+Sur **`ec08c42` client** et **`165d2e0` serveur**, sont présents : accès à l’activation depuis la connexion, formulaire dédié, lien masqué analysé par fragment, demande SMS explicite, validation identifiant/mot de passe/code et retour à la connexion sans connexion automatique. Les appels restent dirigés vers le serveur configuré, hors EDT, avec annulation/nettoyage et attente `Retry-After` sur 429.
+
+Le serveur revalide le défi sous verrous compte/invitation, envoie après commit, conserve l’échec initial en cas de compensation défaillante et dispose de la reprise durable V28. L’adaptateur OVHcloud EU est implémenté ; **réception réelle non vérifiée**. Le filtre public de Lise est raccordé, avec quota Redis commun aux deux routes.
+
+Les anciennes tâches « route finale », « refus d’invitation », « revalidation avant SMS », « compensation » et « activation Swing » ne sont plus entièrement absentes. Distinguer code réalisé et recette d’exploitation : les listes historiques du gist restent datées, sans clôturer par extrapolation les autres sujets.
+
+- [ ] Réception et comportement opérationnel avec compte OVHcloud réel, après préparation explicite de l’environnement.
+- [ ] Premier enrôlement TOTP des comptes concernés, distinct de l’activation SMS et du POST normal de connexion.
+- [ ] Déploiement, TLS/proxy/réseau, exploitation multi-instance, audits SMS par entreprise et confirmation des garanties du fournisseur.
+- [ ] Confirmations privilégiées, ADMIN_EMERGENCY, préférences par compte et fiches/planning/interventions/documents connectés.
+
+La démo CSV reste indépendante et les cartes métier connectées désactivées. Les [suites complètes de Codex](VALIDATION.md#activation-sms-swing-2026-11-21) sont 1 143/1 143 serveur et 413/413 client dans les deux modes ; elles ne prouvent pas une recette complète jusqu’au téléphone.
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
 
 <a id="reprise-2026-11-21"></a>
 

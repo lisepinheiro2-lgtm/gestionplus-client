@@ -1,12 +1,29 @@
 ---
 title: "Documentation du client Swing"
-summary: "Reprise au 21 novembre : sessions actives, structures autorisées et identité brute."
+summary: "Client ec08c42 : activation invitée, 413/413 dans les deux modes et limites fournisseur."
 read_when:
   - "commencer une séance sur le client ou retrouver un document"
   - "préparer la réunion du client et du serveur dans Gestion+"
 ---
 
 # Documentation du client Swing
+
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Reprise activation invitée — 21 novembre 2026
+
+Client **`ec08c42`** : formulaire d’activation depuis la connexion, lien masqué, demande SMS explicite et retour à la connexion sans connexion automatique. Serveur **`165d2e0`** : défis sécurisés, reprise V28 et adaptateur OVHcloud EU.
+
+- [Responsabilités, lien et transport vers le serveur configuré](ARCHITECTURE.md#activation-sms-swing-2026-11-21).
+- [Formulaire, 429 et thèmes clair/sombre](INTERFACE-RAVEN.md#activation-sms-swing-2026-11-21).
+- [Suites complètes de Codex : 413/413 client dans chaque mode, 1 143/1 143 serveur](VALIDATION.md#activation-sms-swing-2026-11-21).
+- [Travaux réalisés et tâches restantes](ROADMAP.md#activation-sms-swing-2026-11-21).
+- [Activation SMS distincte du premier enrôlement TOTP](vision-ensemble.md#activation-sms-swing-2026-11-21).
+
+Réception réelle OVHcloud et déploiement non vérifiés ; aucun parcours complet jusqu’au téléphone revendiqué. Les cartes métier connectées restent désactivées et la démo CSV indépendante.
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
 
 <a id="reprise-2026-11-21"></a>
 

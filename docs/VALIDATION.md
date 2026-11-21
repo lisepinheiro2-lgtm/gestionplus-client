@@ -1,10 +1,42 @@
 ---
-summary: "381/381 client avant revue rapportés par Lise ; contrôles ciblés de Codex puis confirmation sans nouveau total."
+summary: "Codex : serveur 1143/1143, client 413/413 dans les deux modes ; activation isolée et limites fournisseur."
 read_when:
   - "examiner les validations les régressions et les vérifications restant à autoriser"
 ---
 
 # Tests et état des validations
+
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Activation invitée : suites complètes et preuves — 21 novembre 2026
+
+Client `ec08c42`, serveur `165d2e0` relus. Les validations suivantes sont attribuées à **Codex**, avant cette actualisation ; elles ne sont pas déduites de la simple présence des tests.
+
+### Validation du 21 novembre 2026 — Codex
+
+| Périmètre réellement exécuté avant cette actualisation | Résultat | Portée |
+| --- | --- | --- |
+| Suite complète serveur | **1 143/1 143 réussis**, 99 suites recensées dans le rapport. | Dont **12 scénarios sur deux JVM**, Redis et PostgreSQL jetables ; pas un nouveau benchmark. |
+| Suite complète client sur classpath | **413/413 réussis**. | Dispositifs isolés de transport et de Swing ; résultat distinct du mode modulaire. |
+| Suite complète client en mode modulaire | **413/413 réussis**. | Même suite vérifiée en module ; ne pas additionner les deux modes pour inventer un total client. |
+| Contrôle visuel rapporté | Formulaire vérifié en **clair et sombre**. | Contrôle du formulaire, pas recette complète jusqu’à un téléphone. |
+
+Aucun échec, erreur ou test ignoré signalé. Les migrations ont été appliquées uniquement dans des PostgreSQL jetables ; processus et conteneurs de validation arrêtés. Aucun compte OVHcloud réel, appel réel OVHcloud/Free ou SMS facturé utilisé : les appels fournisseur sont simulés.
+
+Le rapport a été établi sur des arbres adaptés avant commit : HEAD de référence `64dc70c` serveur et `15bc0cb` client. Les changements sont désormais présents dans les commits locaux **`165d2e0` serveur** et **`ec08c42` client**. Pendant cette mission documentaire, les empreintes des **23 fichiers serveur et 11 fichiers client inventoriés** correspondent au rapport, sans écart. Cela ne prouve pas l’état d’une branche distante et ne transpose pas les résultats à d’éventuelles modifications ultérieures.
+
+Les tests HTTP serveur utilisent PostgreSQL réel jetable et un expéditeur simulé ; les tests Swing/transport utilisent leurs propres dispositifs isolés. **Aucune recette complète Swing → OVHcloud → téléphone n’est revendiquée.** Réception réelle, enrôlement initial TOTP des comptes concernés et déploiement restent à valider ou à construire. Les anciens résultats restent datés ; aucun test, build, serveur, migration, commit, push ou pull n’est lancé pendant cette actualisation.
+
+### Scénarios et limites de lecture
+
+`ActivationInvitationTest` vérifie l’extraction du fragment et les liens refusés ; `ActivationConnectionTest` couvre le transport vers le serveur configuré ; `ActivationControllerTest` et `ActivationWindowTest` portent sur formulaire, concurrence, refus, limites, nettoyage et fermeture. Ces dispositifs ne constituent pas un acheminement réel de SMS par OVHcloud.
+
+Côté serveur, lire notamment `ActivationHttpPostgresqlIntegrationTest`, `ActivationIdentityChallengeServiceTest`, `ActivationIdentityChallengeServicePostgresqlIntegrationTest`, `ActivationChallengeRecoveryPostgresqlIntegrationTest`, `ActivationSmsConfirmationMigrationTest` et `OvhSmsActivationMessageSenderTest`. Les tests HTTP PostgreSQL utilisent un expéditeur simulé ; le test de l’adaptateur OVHcloud simule HTTP. Les douze scénarios à deux JVM ajoutent la reprise durable et le quota public partagé aux garanties de session déjà suivies.
+
+Le profil serveur `application-test.yaml` utilise désormais PostgreSQL jetable Testcontainers. Les attentes des requêtes malformées ont été corrigées vers 400 ; ne pas traiter les anciennes attentes comme des anomalies actuelles. Les 291 tests ciblés du lot multi-instance restent un jalon antérieur, distinct de cette suite complète.
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
 
 <a id="reprise-2026-11-21"></a>
 

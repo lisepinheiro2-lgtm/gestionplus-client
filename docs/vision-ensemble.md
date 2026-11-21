@@ -1,6 +1,6 @@
 ---
 title: "Gestion+ — vision d’ensemble client et serveur"
-summary: "Vision commune et décisions métier : structures, droits, archives, concurrence, secours hors ligne et documents sensibles."
+summary: "Activation SMS/Swing réalisée ; séparation TOTP et limites de réception/exploitation conservées."
 read_when:
   - "raisonner sur l’ensemble Gestion+ avant une évolution d’un composant"
   - "retrouver les besoins Archives Personnel Clients Planning comptes et sécurité"
@@ -9,6 +9,23 @@ read_when:
 ---
 
 # Gestion+ — vision d’ensemble
+
+<a id="activation-sms-swing-2026-11-21"></a>
+
+## Activation SMS et séparation avec TOTP — 21 novembre 2026
+
+**Client `ec08c42`, serveur `165d2e0`** : l’activation invitée est raccordée dans Swing. Le lien masqué fournit invitation et jeton, sans devenir une destination réseau. Demande SMS explicite, saisie identifiant/mot de passe/confirmation/code, appels hors EDT, annulation/nettoyage et retour à la connexion sans connexion automatique sont présents.
+
+Le serveur revalide compte/invitation, téléphone, jeton et instant après verrou ; l’envoi suit le commit. V28 et la reprise multi-instance rendent un défi non confirmé inutilisable puis révoqué à échéance de récupération, sans renvoi automatique ni suppression de l’historique. L’adaptateur OVHcloud EU est ajouté sans dépendance ; son acceptation ne prouve pas la réception sur téléphone. Free reste destiné aux essais locaux.
+
+**L’enrôlement initial TOTP reste à construire pour les comptes concernés.** Les décisions d’activation restreinte, preuve temporaire distincte, validation du nouvel authentificateur et confirmations privilégiées restent applicables ; ce lot ne les réalise pas. MFA toujours obligatoire selon les rôles documentés, facultatif pour les autres ; la connexion conserve son unique POST contenant le TOTP. Activation SMS et premier enrôlement MFA sont deux parcours distincts.
+
+Codex a validé les suites complètes : **1 143/1 143 serveur**, dont 12 scénarios à deux JVM, et **413/413 client sur classpath et en module**. Aucun appel réel au fournisseur ou SMS facturé ; tests isolés, aucune recette complète Swing → OVHcloud → téléphone ni déploiement réel validé. Voir [preuves attribuées](VALIDATION.md#activation-sms-swing-2026-11-21).
+
+La conception multi-instance reste la référence. Démo CSV indépendante, cartes métier connectées désactivées ; audits filtrés, exploitation, gouvernance et autres tâches historiques gardent leurs limites propres.
+
+**Historique antérieur à cette reprise activation SMS/Swing : les dates, preuves et anciennes limites ci-dessous gardent leur contexte ; la reprise ci-dessus décrit l’état courant.**
+
 
 <a id="reprise-2026-11-21"></a>
 
@@ -27,7 +44,7 @@ Les services d’accès, transfert ADMIN, succession volontaire, cycle des compt
 
 `HmacActivationIdentityVerifier` existe déjà. `MfaEnrollmentVerifier` et `PrivilegedConfirmationVerifier` sont des contrats présents dont les implémentations opérationnelles restent attendues. FIDO2/WebAuthn demeure une évolution à étudier pour les comptes privilégiés.
 
-Les décisions et limites antérieures sont conservées. Premier déploiement sur une seule instance ; multiserveur, préférences par compte, planning/interventions connectés, documents sensibles et ADMIN_EMERGENCY restent suivis sans nouvelle réalisation annoncée.
+Les décisions et limites antérieures sont conservées. Le choix d’instance unique a été remplacé par la conception multi-instance Redis du 21 novembre. Préférences par compte, planning/interventions connectés, documents sensibles et ADMIN_EMERGENCY restent des chantiers distincts ; l’ancien choix reste consultable dans les bilans datés du serveur.
 
 
 <a id="connexion-locale-2026-11-20"></a>
