@@ -16,6 +16,7 @@ import gestion.app.ConnectedApplicationContext;
 import gestion.app.DemoDataInitializer;
 import gestion.app.LoginController;
 import gestion.app.SessionCoordinator;
+import gestion.app.StructureSelectionController;
 import gestion.app.SessionCoordinator.LogoutResult;
 import gestion.app.SessionCoordinator.EndReason;
 import gestion.net.ServerConnection;
@@ -107,6 +108,12 @@ public final class Main {
 				selection.user());
 		CompletableFuture<LogoutResult> sessionEnded = new CompletableFuture<>();
 		AtomicReference<ConnectedHomeWindow> window = new AtomicReference<>();
+		StructureSelectionController structures = new StructureSelectionController(context, state -> {
+			ConnectedHomeWindow current = window.get();
+			if (current != null) {
+				current.showStructureSelection(state);
+			}
+		});
 		SessionCoordinator coordinator = new SessionCoordinator(context, result -> {
 
 			try {
@@ -132,6 +139,7 @@ public final class Main {
 			if (current != null) {
 				current.showSessionStatus(status);
 			}
+			structures.onSessionStatus(status);
 		});
 
 		SwingUtilities.invokeLater(() -> {
@@ -142,6 +150,7 @@ public final class Main {
 				ConnectedHomeWindow homeWindow = new ConnectedHomeWindow(context, () -> coordinator.requestLogout(false),
 						() -> coordinator.requestLogout(true), coordinator::refreshSession);
 				window.set(homeWindow);
+				homeWindow.setStructureActions(structures::selectStructure, structures::refresh);
 				homeWindow.show();
 				coordinator.startMonitoring();
 			} catch (RuntimeException failure) {

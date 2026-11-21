@@ -14,14 +14,17 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -169,6 +172,48 @@ public class ServerConnection implements AutoCloseable {
 
 	public void setSessionInvalidationHandler(Runnable handler) {
 		sessionInvalidationHandler = Objects.requireNonNull(handler);
+	}
+
+	public List<StructureSummary> fetchAccessibleStructures() throws IOException, InterruptedException {
+		HttpRequest request = HttpRequest.newBuilder(endpoint("/api/structures"))
+				.GET().timeout(Duration.ofSeconds(5)).build();
+		HttpResponse<String> response = send(request);
+		if (response.statusCode() != 200) {
+			throw apiFailure(response);
+		}
+		List<StructureSummary> structures = mapper.readerFor(
+				mapper.getTypeFactory().constructCollectionType(List.class, StructureSummary.class))
+				.with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readValue(response.body());
+		if (structures == null) {
+			throw new IOException("Réponse de structures invalide.");
+		}
+		HashSet<UUID> identifiers = new HashSet<>();
+		for (StructureSummary structure : structures) {
+			if (structure == null || !identifiers.add(structure.structureID())) {
+				throw new IOException("Réponse de structures invalide.");
+			}
+		}
+		return List.copyOf(structures);
+	}
+
+	public Optional<StructureSummary> fetchAccessibleStructure(UUID structureID)
+			throws IOException, InterruptedException {
+		Objects.requireNonNull(structureID, "L'identifiant de structure est obligatoire.");
+		HttpRequest request = HttpRequest.newBuilder(endpoint("/api/structures/" + structureID))
+				.GET().timeout(Duration.ofSeconds(5)).build();
+		HttpResponse<String> response = send(request);
+		if (response.statusCode() == 404) {
+			return Optional.empty();
+		}
+		if (response.statusCode() != 200) {
+			throw apiFailure(response);
+		}
+		StructureSummary structure = mapper.readerFor(StructureSummary.class)
+				.with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS).readValue(response.body());
+		if (structure == null || !structureID.equals(structure.structureID())) {
+			throw new IOException("Réponse de structure invalide.");
+		}
+		return Optional.of(structure);
 	}
 
 	public void logout() throws IOException, InterruptedException {

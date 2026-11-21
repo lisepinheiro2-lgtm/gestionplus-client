@@ -80,7 +80,8 @@ class SessionMonitoringTest {
 		runCheck();
 		onEdt(() -> {
 			assertEquals(SessionStatus.State.ACTIVE, lastStatus().state());
-			assertTrue(context.canStartBusinessOperation());
+			assertTrue(context.isSessionAvailable());
+			assertFalse(context.canStartBusinessOperation());
 		});
 		assertFalse(connection.checkOnEdt.get());
 		assertTrue(updatesOnEdt.get());

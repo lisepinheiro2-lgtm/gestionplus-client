@@ -7,6 +7,9 @@ import java.awt.Image;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Objects;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 import javax.swing.ImageIcon;
@@ -17,6 +20,7 @@ import javax.swing.JPanel;
 
 import gestion.app.ConnectedApplicationContext;
 import gestion.app.SessionStatus;
+import gestion.app.StructureSelectionState;
 
 public final class ConnectedHomeWindow {
 
@@ -24,6 +28,7 @@ public final class ConnectedHomeWindow {
 	private final JFrame frame;
 	private final ApplicationHeader header;
 	private final SessionBanner sessionBanner;
+	private final StructureSelectorPanel structureSelector = new StructureSelectorPanel();
 	private final CardLayout pages = new CardLayout();
 	private final JPanel content = new JPanel(pages);
 
@@ -38,7 +43,7 @@ public final class ConnectedHomeWindow {
 		ImageIcon taskbarIcon = new ImageIcon(ConnectedHomeWindow.class.getResource("/icons/gestion-taskbar.png"));
 		frame.setIconImages(IntStream.of(16, 24, 32, 48, 64, 128, 256)
 				.mapToObj(size -> taskbarIcon.getImage().getScaledInstance(size, size, Image.SCALE_SMOOTH)).toList());
-		frame.setMinimumSize(new Dimension(760, 650));
+		frame.setMinimumSize(new Dimension(800, 750));
 		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter() {
 			private boolean activated;
@@ -74,7 +79,10 @@ public final class ConnectedHomeWindow {
 		suspended.add(suspendedMessage, BorderLayout.CENTER);
 		content.add(suspended, "suspended");
 		JPanel body = new JPanel(new BorderLayout());
-		body.add(sessionBanner, BorderLayout.NORTH);
+		JPanel statusArea = new JPanel(new BorderLayout());
+		statusArea.add(sessionBanner, BorderLayout.NORTH);
+		statusArea.add(structureSelector, BorderLayout.CENTER);
+		body.add(statusArea, BorderLayout.NORTH);
 		body.add(content, BorderLayout.CENTER);
 		frame.add(body, BorderLayout.CENTER);
 		showSessionStatus(new SessionStatus(SessionStatus.State.CHECKING, 0));
@@ -88,7 +96,19 @@ public final class ConnectedHomeWindow {
 
 	public void dispose() {
 		header.setIdentity("");
+		structureSelector.showSelection(new StructureSelectionState(StructureSelectionState.Phase.SUSPENDED,
+				List.of(), null, ""));
 		frame.dispose();
+	}
+
+	public void setStructureActions(Consumer<UUID> onSelection, Runnable onRefresh) {
+		structureSelector.setActions(onSelection, onRefresh);
+	}
+
+	public void showStructureSelection(StructureSelectionState state) {
+		if (context.isActive()) {
+			structureSelector.showSelection(state);
+		}
 	}
 
 	public void showSessionStatus(SessionStatus status) {

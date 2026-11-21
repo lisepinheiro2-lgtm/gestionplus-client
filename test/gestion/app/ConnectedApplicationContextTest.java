@@ -52,6 +52,8 @@ class ConnectedApplicationContextTest {
 	void businessOperationsRequireBothServerAvailabilityAndAnActiveContext() {
 		assertFalse(context.canStartBusinessOperation());
 		context.setAvailable(true);
+		context.replaceStructures(java.util.List.of(new gestion.net.StructureSummary(java.util.UUID.randomUUID(),
+				"Fictitious structure")), null);
 		assertTrue(context.canStartBusinessOperation());
 		context.setAvailable(false);
 		assertFalse(context.canStartBusinessOperation());

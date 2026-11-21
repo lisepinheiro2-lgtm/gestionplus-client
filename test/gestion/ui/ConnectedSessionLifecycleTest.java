@@ -23,12 +23,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -45,11 +47,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import gestion.Main;
 import gestion.net.LoopbackHttpFixture;
 import gestion.net.LoopbackHttpFixture.CapturedRequest;
 import gestion.net.LoopbackHttpFixture.Reply;
+import gestion.net.StructureSummary;
 
 @Tag("desktop")
 @Isolated
@@ -154,6 +158,99 @@ class ConnectedSessionLifecycleTest {
 	}
 
 	@ParameterizedTest
+	@ValueSource(ints = { 0, 1, 2 })
+	void structuresComeFromTheServerAndTheChoiceIsExplicitWhenSeveralAreAccessible(int count) throws Exception {
+		UUID firstID = UUID.randomUUID();
+		UUID secondID = UUID.randomUUID();
+		String first = "{\"structureID\":\"" + firstID + "\",\"structureName\":\"Fictitious North\"}";
+		String second = "{\"structureID\":\"" + secondID + "\",\"structureName\":\"Fictitious South\"}";
+		String body = count == 0 ? "[]" : count == 1 ? "[" + first + "]" : "[" + first + "," + second + "]";
+		Reply[] normal = repliesFor(204, FIRST_USER);
+		try (var server = new LoopbackHttpFixture(request -> {
+			if (isSessionCheck(request)) {
+				return normal[3];
+			}
+			if (isStructureRead(request)) {
+				return json(200, body);
+			}
+			if (request.requestLine().equals("GET /api/structures/" + secondID + " HTTP/1.1")) {
+				return json(200, second);
+			}
+			return null;
+		}, normal[0], normal[1], normal[2], normal[4], normal[5])) {
+			startApplication(server);
+			chooseConnectedMode();
+			loginAs(FIRST_USER);
+			JFrame home = awaitWindow(JFrame.class, candidate -> "Gestion +".equals(candidate.getTitle())
+					&& named(candidate, JTextArea.class, "État de la structure").getText()
+							.contains(count == 0 ? "aucune structure" : count == 1 ? "Structure active" : "Choisissez"));
+			onEdt(() -> {
+				JComboBox<?> choices = named(home, JComboBox.class, "Structure de travail");
+				assertEquals(count > 1, choices.isEnabled());
+				if (count == 0) {
+					assertEquals(0, choices.getItemCount());
+				} else if (count == 1) {
+					assertEquals(firstID, ((StructureSummary) choices.getSelectedItem()).structureID());
+				} else {
+					assertEquals(null, choices.getSelectedItem());
+					choices.setSelectedIndex(2);
+				}
+			});
+			if (count > 1) {
+				awaitWindow(JFrame.class, candidate -> candidate == home
+						&& named(candidate, JTextArea.class, "État de la structure").getText()
+								.equals("Structure active : Fictitious South"));
+			}
+			onEdt(() -> home.dispatchEvent(new WindowEvent(home, WindowEvent.WINDOW_CLOSING)));
+			application.get(5, TimeUnit.SECONDS);
+			List<CapturedRequest> requests = server.requests();
+			assertTrue(requests.stream().filter(ConnectedSessionLifecycleTest::isStructureRead)
+					.allMatch(request -> request.headers().get("cookie")
+							.contains("fictitious_authenticated_" + FIRST_USER)));
+		}
+	}
+
+	@Test
+	void theSecondAccountDoesNotInheritTheFormerStructureListOrSelection() throws Exception {
+		Reply[] normal = repliesFor(204, FIRST_USER, SECOND_USER);
+		UUID firstID = UUID.randomUUID();
+		String first = "[{\"structureID\":\"" + firstID + "\",\"structureName\":\"Fictitious account A scope\"}]";
+		List<Reply> scripted = new ArrayList<>();
+		for (int index = 0; index < normal.length; index++) {
+			if (index % 6 != 3) {
+				scripted.add(normal[index]);
+			}
+		}
+		try (var server = new LoopbackHttpFixture(request -> {
+			if (isSessionCheck(request)) {
+				return normal[3];
+			}
+			if (isStructureRead(request)) {
+				return json(200, request.headers().get("cookie").contains(FIRST_USER) ? first : "[]");
+			}
+			return null;
+		}, scripted.toArray(Reply[]::new))) {
+			startApplication(server);
+			chooseConnectedMode();
+			loginAs(FIRST_USER);
+			JFrame firstHome = awaitWindow(JFrame.class, candidate -> "Gestion +".equals(candidate.getTitle())
+					&& named(candidate, JTextArea.class, "État de la structure").getText()
+							.equals("Structure active : Fictitious account A scope"));
+			onEdt(() -> named(firstHome, JButton.class, "Compte utilisateur").doClick(0));
+			awaitWindow(LoginWindow.class, candidate -> true);
+			loginAs(SECOND_USER);
+			JFrame secondHome = awaitWindow(JFrame.class, candidate -> "Gestion +".equals(candidate.getTitle())
+					&& named(candidate, JTextArea.class, "État de la structure").getText().contains("aucune structure"));
+			onEdt(() -> {
+				assertEquals(0, named(firstHome, JComboBox.class, "Structure de travail").getItemCount());
+				assertEquals(0, named(secondHome, JComboBox.class, "Structure de travail").getItemCount());
+				secondHome.dispatchEvent(new WindowEvent(secondHome, WindowEvent.WINDOW_CLOSING));
+			});
+			application.get(5, TimeUnit.SECONDS);
+		}
+	}
+
+	@ParameterizedTest
 	@CsvSource({ "403,false", "503,false", "503,true" })
 	void anUnconfirmedLogoutDisposesHomeAndWarnsBeforeReturningOrQuitting(int status, boolean quitAfter)
 			throws Exception {
@@ -238,6 +335,9 @@ class ConnectedSessionLifecycleTest {
 		Instant baseTime = Instant.parse("2026-11-21T12:00:00Z");
 		AtomicLong firstCheck = new AtomicLong(Long.MIN_VALUE);
 		try (var server = new LoopbackHttpFixture(request -> {
+			if (isStructureRead(request)) {
+				return json(200, "[]");
+			}
 			if (!isSessionCheck(request)) {
 				return null;
 			}
@@ -271,7 +371,8 @@ class ConnectedSessionLifecycleTest {
 		Reply[] normal = repliesFor(204, FIRST_USER);
 		Reply[] replies = { normal[0], normal[1], normal[2], normal[4], normal[5] };
 		AtomicBoolean recovered = new AtomicBoolean();
-		try (var server = new LoopbackHttpFixture(request -> isSessionCheck(request)
+		try (var server = new LoopbackHttpFixture(request -> isStructureRead(request) ? json(200, "[]")
+				: isSessionCheck(request)
 				? recovered.get() ? normal[3] : json(503, "{\"code\":\"SERVICE_UNAVAILABLE\"}") : null, replies)) {
 			startApplication(server);
 			chooseConnectedMode();
@@ -434,7 +535,8 @@ class ConnectedSessionLifecycleTest {
 			}
 		}
 		Reply observation = sessionReply(Instant.now(), 1_800);
-		return new LoopbackHttpFixture(request -> isSessionCheck(request) ? observation : null,
+		return new LoopbackHttpFixture(request -> isStructureRead(request) ? json(200, "[]")
+				: isSessionCheck(request) ? observation : null,
 				replies.toArray(Reply[]::new));
 	}
 
@@ -443,6 +545,11 @@ class ConnectedSessionLifecycleTest {
 	}
 
 	private static List<CapturedRequest> businessRequests(LoopbackHttpFixture server) throws Exception {
-		return server.requests().stream().filter(request -> !isSessionCheck(request)).toList();
+		return server.requests().stream().filter(request -> !isSessionCheck(request) && !isStructureRead(request))
+				.toList();
+	}
+
+	private static boolean isStructureRead(CapturedRequest request) {
+		return "GET /api/structures HTTP/1.1".equals(request.requestLine());
 	}
 }

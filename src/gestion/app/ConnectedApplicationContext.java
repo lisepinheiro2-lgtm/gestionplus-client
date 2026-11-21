@@ -4,6 +4,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import gestion.net.StructureSummary;
 import gestion.net.ServerConnection.CurrentUser;
 import gestion.net.ServerConnection;
 
@@ -14,6 +16,8 @@ public class ConnectedApplicationContext implements AutoCloseable {
 	private final CurrentUser user;
 	private volatile SessionState state = SessionState.ACTIVE;
 	private volatile boolean available;
+	private List<StructureSummary> structures = List.of();
+	private StructureSummary selectedStructure;
 	private final List<Runnable> closeActions = new ArrayList<>();
 
 	public ConnectedApplicationContext(ServerConnection connection, CurrentUser user) {
@@ -32,6 +36,7 @@ public class ConnectedApplicationContext implements AutoCloseable {
 		}
 
 		state = SessionState.CLOSING;
+		clearStructures();
 	}
 
 	synchronized boolean tryBeginClosing() {
@@ -50,15 +55,29 @@ public class ConnectedApplicationContext implements AutoCloseable {
 				return;
 			}
 			state = SessionState.CLOSED;
+			available = false;
+			clearStructures();
 			actions = List.copyOf(closeActions);
 			closeActions.clear();
 		}
+		RuntimeException failure = null;
 		try {
 			for (Runnable action : actions) {
-				action.run();
+				try {
+					action.run();
+				} catch (RuntimeException exception) {
+					if (failure == null) {
+						failure = exception;
+					} else {
+						failure.addSuppressed(exception);
+					}
+				}
 			}
 		} finally {
 			connection.close();
+		}
+		if (failure != null) {
+			throw failure;
 		}
 	}
 
@@ -77,8 +96,39 @@ public class ConnectedApplicationContext implements AutoCloseable {
 		return state == SessionState.ACTIVE;
 	}
 
-	public boolean canStartBusinessOperation() {
+	public synchronized boolean canStartBusinessOperation() {
+		return isSessionAvailable() && selectedStructure != null;
+	}
+
+	public boolean isSessionAvailable() {
 		return isActive() && available;
+	}
+
+	public synchronized List<StructureSummary> structures() {
+		return structures;
+	}
+
+	public synchronized Optional<StructureSummary> selectedStructure() {
+		return Optional.ofNullable(selectedStructure);
+	}
+
+	synchronized void replaceStructures(List<StructureSummary> structures, UUID preferredID) {
+		if (!isSessionAvailable()) {
+			return;
+		}
+		this.structures = List.copyOf(structures);
+		selectedStructure = this.structures.size() == 1 ? this.structures.getFirst()
+				: this.structures.stream().filter(item -> item.structureID().equals(preferredID))
+						.findFirst().orElse(null);
+	}
+
+	synchronized void clearSelection() {
+		selectedStructure = null;
+	}
+
+	synchronized void clearStructures() {
+		structures = List.of();
+		selectedStructure = null;
 	}
 
 	void setAvailable(boolean available) {
