@@ -11,17 +11,20 @@ import java.util.concurrent.ExecutionException;
 import javax.swing.SwingWorker;
 
 import gestion.net.ActivationInvitation;
+import gestion.net.ActivationResult;
 import gestion.net.HttpApiException;
 import gestion.net.ServerConnection;
 import gestion.ui.ActivationWindow;
+import gestion.ui.MfaEnrollmentWindow;
 
 public final class ActivationController implements AutoCloseable {
 
 	private final ActivationWindow window;
 	private final ServerConnection connection;
 	private final WindowAdapter lifecycle;
-	private SwingWorker<Void, Void> pending;
+	private SwingWorker<ActivationResult, Void> pending;
 	private boolean closed;
+	private boolean connectionTransferred;
 
 	public ActivationController(ActivationWindow window, ServerConnection connection) {
 		this.window = Objects.requireNonNull(window);
@@ -45,11 +48,11 @@ public final class ActivationController implements AutoCloseable {
 		String code = activation ? window.code() : null;
 		char[] password = activation ? window.password() : new char[0];
 		window.setBusy(true);
-		SwingWorker<Void, Void> worker = new SwingWorker<>() {
+		SwingWorker<ActivationResult, Void> worker = new SwingWorker<>() {
 			private char[] waitingPassword = password;
 
 			@Override
-			protected Void doInBackground() throws Exception {
+			protected ActivationResult doInBackground() throws Exception {
 				char[] supplied;
 				synchronized (this) {
 					if (isCancelled()) {
@@ -60,7 +63,7 @@ public final class ActivationController implements AutoCloseable {
 				}
 				try {
 					if (activation) {
-						connection.completeActivation(invitation, userName, supplied, code);
+						return connection.completeActivation(invitation, userName, supplied, code);
 					} else {
 						connection.requestActivationChallenge(invitation);
 					}
@@ -84,9 +87,12 @@ public final class ActivationController implements AutoCloseable {
 				pending = null;
 				window.setBusy(false);
 				try {
-					get();
+					ActivationResult result = get();
 					if (activation) {
 						window.showSuccess();
+						if (result.requiresMfaEnrollment()) {
+							showEnrollment(result.enrollmentProof());
+						}
 					} else {
 						window.showMessage("Code SMS demandé. Utilisez le dernier code reçu, valable au maximum cinq minutes.", false);
 					}
@@ -108,6 +114,17 @@ public final class ActivationController implements AutoCloseable {
 			worker.cancel(true);
 			window.setBusy(false);
 			showFailure(failure);
+		}
+	}
+
+	private void showEnrollment(String proof) {
+		MfaEnrollmentWindow enrollmentWindow = new MfaEnrollmentWindow(window);
+		try (var enrollmentController = new MfaEnrollmentController(enrollmentWindow, connection, proof)) {
+			connectionTransferred = true;
+			enrollmentWindow.setVisible(true);
+		} finally {
+			enrollmentWindow.dispose();
+			window.dispose();
 		}
 	}
 
@@ -141,6 +158,8 @@ public final class ActivationController implements AutoCloseable {
 			pending.cancel(true);
 			pending = null;
 		}
-		connection.close();
+		if (!connectionTransferred) {
+			connection.close();
+		}
 	}
 }

@@ -241,25 +241,78 @@ public class ServerConnection implements AutoCloseable {
 		postActivation(invitation, "/sms-challenge", Map.of("token", invitation.token()));
 	}
 
-	public void completeActivation(ActivationInvitation invitation, String userName, char[] password, String code)
+	public ActivationResult completeActivation(ActivationInvitation invitation, String userName, char[] password, String code)
 			throws IOException, InterruptedException {
 		Objects.requireNonNull(invitation);
 		Objects.requireNonNull(password);
-		postActivation(invitation, "/activation", Map.of("token", invitation.token(), "proof", code,
+		HttpResponse<String> response = postActivation(invitation, "/activation", Map.of("token", invitation.token(), "proof", code,
 				"userName", userName, "password", new String(password)));
+		return readEnrollmentResponse(response, ActivationResult.class);
 	}
 
-	private void postActivation(ActivationInvitation invitation, String suffix, Map<String, String> body)
+	public void openMfaEnrollment(String proof) throws IOException, InterruptedException {
+		if (proof == null || !proof.matches("[A-Za-z0-9_-]{22}")) {
+			throw new IllegalArgumentException("La preuve d’enrôlement est invalide.");
+		}
+		postJson("/api/auth/mfa/enrollment/session", Map.of("proof", proof), 204);
+	}
+
+	public MfaEnrollmentObservation beginMfaEnrollment() throws IOException, InterruptedException {
+		long started = System.nanoTime();
+		HttpResponse<String> response = postJson("/api/auth/mfa/enrollment", Map.of(), 200);
+		Duration roundTrip = Duration.ofNanos(System.nanoTime() - started);
+		MfaEnrollment enrollment = readEnrollmentResponse(response, MfaEnrollment.class);
+		try {
+			Instant serverTime = response.headers().firstValue("Date")
+					.map(value -> Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(value)))
+					.orElseGet(Instant::now);
+			Duration remaining = Duration.between(serverTime, enrollment.expiresAt()).minus(roundTrip).minusSeconds(1);
+			return new MfaEnrollmentObservation(enrollment, remaining.isNegative() ? Duration.ZERO
+					: remaining.compareTo(Duration.ofMinutes(10)) > 0 ? Duration.ofMinutes(10) : remaining);
+		} catch (DateTimeParseException invalidDate) {
+			throw new IOException("Date de réponse du serveur invalide.");
+		}
+	}
+
+	public MfaRecoveryCodes completeMfaEnrollment(UUID enrollmentID, String code) throws IOException, InterruptedException {
+		Objects.requireNonNull(enrollmentID);
+		if (code == null || !code.matches("[0-9]{6}")) {
+			throw new IllegalArgumentException("Le code doit contenir six chiffres.");
+		}
+		return readEnrollmentResponse(postJson("/api/auth/mfa/enrollment/complete",
+				Map.of("enrollmentID", enrollmentID.toString(), "code", code), 200), MfaRecoveryCodes.class);
+	}
+
+	private <T> T readEnrollmentResponse(HttpResponse<String> response, Class<T> type) throws IOException {
+		try {
+			T result = mapper.readerFor(type).with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+					.with(DeserializationFeature.FAIL_ON_MISSING_CREATOR_PROPERTIES).readValue(response.body());
+			if (result == null) {
+				throw new IOException("Réponse d’enrôlement invalide.");
+			}
+			return result;
+		} catch (IOException | RuntimeException invalidResponse) {
+			throw new IOException("Réponse d’activation ou d’enrôlement invalide.");
+		}
+	}
+
+	private HttpResponse<String> postActivation(ActivationInvitation invitation, String suffix, Map<String, String> body)
+			throws IOException, InterruptedException {
+		return postJson("/api/invitations/" + invitation.invitationID() + suffix, body, 200);
+	}
+
+	private HttpResponse<String> postJson(String path, Map<String, String> body, int expectedStatus)
 			throws IOException, InterruptedException {
 		CsrfToken csrf = fetchCsrfToken();
-		HttpRequest request = HttpRequest.newBuilder(endpoint("/api/invitations/" + invitation.invitationID() + suffix))
+		HttpRequest request = HttpRequest.newBuilder(endpoint(path))
 				.header("Content-Type", "application/json; charset=UTF-8").header(csrf.headerName(), csrf.token())
 				.timeout(Duration.ofSeconds(20)).POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(body),
 						StandardCharsets.UTF_8)).build();
 		HttpResponse<String> response = send(request);
-		if (response.statusCode() != 200) {
+		if (response.statusCode() != expectedStatus) {
 			throw apiFailure(response);
 		}
+		return response;
 	}
 
 	@Override

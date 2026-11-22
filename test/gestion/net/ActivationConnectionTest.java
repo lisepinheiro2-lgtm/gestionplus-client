@@ -41,7 +41,7 @@ class ActivationConnectionTest {
 
 	@Test
 	void completesActivationWithJsonWithoutAutomaticallyLoggingIn() throws Exception {
-		try (var server = new LoopbackHttpFixture(json(200, CSRF), json(200, ""));
+		try (var server = new LoopbackHttpFixture(json(200, CSRF), json(200, "{\"enrollmentProof\":null}"));
 				var connection = new ServerConnection(URI.create(server.baseUrl()))) {
 			connection.completeActivation(INVITATION, "fictitious_user", "Fictitious-Password-2026!".toCharArray(), "000042");
 			assertEquals(2, server.requests().size());
