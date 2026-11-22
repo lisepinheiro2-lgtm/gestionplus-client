@@ -8,6 +8,17 @@ read_when:
 
 # Documentation du client Swing
 
+<a id="mfa-restreint-2026-11-22"></a>
+
+## Raccordement MFA restant côté Swing — 22 novembre 2026
+
+Le parcours serveur d’enrôlement MFA restreint est finalisé, mais **le formulaire Swing reste à raccorder**. L’interface doit encore prendre en charge ce parcours distinct de l’activation SMS et revenir à la connexion normale après confirmation ; aucune connexion automatique n’en découle.
+
+Cette mission ne livre aucun changement de code client et n’exécute aucune nouvelle validation client. Les résultats Swing antérieurs conservent leur date et leur périmètre. Voir l’[état serveur vérifié](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/AVANCEMENT.md#mfa-restreint-2026-11-22).
+
+**Historique antérieur à la reprise MFA du 22 novembre : les résultats, décisions et anciennes limites ci-dessous gardent leur date et leur périmètre.**
+
+
 <a id="activation-sms-swing-2026-11-21"></a>
 
 ## Reprise activation invitée — 21 novembre 2026
