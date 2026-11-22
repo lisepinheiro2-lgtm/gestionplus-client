@@ -1,12 +1,29 @@
 ---
 title: "Documentation du client Swing"
-summary: "Client ec08c42 : activation invitée, 413/413 dans les deux modes et limites fournisseur."
+summary: "Client ff68060 : MFA Swing, 443/443 par mode, quatre scénarios intégrés et reprise encore limitée."
 read_when:
   - "commencer une séance sur le client ou retrouver un document"
   - "préparer la réunion du client et du serveur dans Gestion+"
 ---
 
 # Documentation du client Swing
+
+<a id="mfa-swing-2026-11-22"></a>
+
+## Reprise MFA Swing raccordé — 22 novembre 2026
+
+Client relu **`ff68060`**, après le socle `ef002e2` du rapport ; douze empreintes conformes. Le dialogue MFA s’ouvre lorsque la réponse d’activation contient la preuve requise, puis revient à la connexion sans connexion automatique. **Raccordement réalisé, étape encore ouverte sur ses limites de reprise.**
+
+- [Responsabilités, transfert de connexion et protocole](ARCHITECTURE.md#mfa-swing-2026-11-22).
+- [Clé masquée et codes de récupération uniques](INTERFACE-RAVEN.md#mfa-swing-2026-11-22).
+- [Codex : 443/443 dans chaque mode et quatre scénarios intégrés](VALIDATION.md#mfa-swing-2026-11-22).
+- [Limites de reprise et travaux restants](ROADMAP.md#mfa-swing-2026-11-22).
+- [Décisions communes et portée de ce raccordement](vision-ensemble.md#mfa-swing-2026-11-22).
+
+La suite serveur complète n’est pas relancée ; les 1 191/1 191 restent antérieurs. SMS/HIBP simulés pour la recette, aucune réception réelle ni déploiement validé. Les anciennes notes « formulaire à raccorder » sont conservées comme historiques.
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
 
 <a id="mfa-restreint-2026-11-22"></a>
 

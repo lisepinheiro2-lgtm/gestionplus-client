@@ -1,5 +1,5 @@
 ---
-summary: "Interface ec08c42 : activation invitée, lien masqué, actions explicites et thèmes clair/sombre."
+summary: "MFA Swing : clé masquée, confirmation TOTP et dix codes uniques ; reprise encore limitée."
 read_when:
   - "travailler sur le design les thèmes et la navigation Swing"
 ---
@@ -7,6 +7,25 @@ read_when:
 <a id="accueil-et-composants-raven"></a>
 
 # Identité graphique de Gestion+ dans Swing
+
+<a id="mfa-swing-2026-11-22"></a>
+
+## Deux écrans MFA raccordés — 22 novembre 2026
+
+Sur le client **`ff68060`**, `ActivationController` lit l’éventuelle preuve renvoyée par l’activation et ouvre automatiquement `MfaEnrollmentWindow` lorsqu’un enrôlement est requis. Sans MFA requis, retour au parcours de connexion sans connexion automatique.
+
+Le premier écran présente la **clé de configuration masquée par défaut**, avec une action explicite pour l’afficher et la saisir manuellement dans l’authentificateur. L’utilisateur confirme avec un TOTP à six chiffres ; échéance et attentes liées aux limites restent visibles. Requêtes hors EDT, mises à jour sur EDT ; refus, 429, erreurs réseau, annulation et expiration sont traités sans rejouer automatiquement la preuve ou le TOTP.
+
+Après confirmation, le second écran présente **les dix codes de récupération une seule fois**, sans sauvegarde ni copie automatique. Le retour normal demande la confirmation de leur conservation. Une fermeture sans cette confirmation exige un avertissement explicite ; quitter pendant une confirmation prévient du risque de perdre la réponse et les codes.
+
+La clé, le code saisi et les codes de récupération sont retirés des champs à la fermeture. Les deux écrans utilisent les ressources et thèmes existants, contrôlés en **clair et sombre** lors de la validation antérieure. Le retour est celui du formulaire de connexion, **sans connexion automatique ni accès métier**, avec indication d’attendre un **nouveau TOTP** : le code de confirmation est déjà consommé.
+
+Une réponse de confirmation perdue est présentée comme un résultat incertain ; aucun renvoi automatique du TOTP. L’orientation vers l’administrateur après perte/expiration du contexte n’implique pas qu’une procédure administrative de reprise ait été développée. Les codes d’une réponse perdue ne peuvent pas être relus par le client.
+
+Voir [architecture](ARCHITECTURE.md#mfa-swing-2026-11-22), [recette et portée](VALIDATION.md#mfa-swing-2026-11-22) et [limites encore ouvertes](ROADMAP.md#mfa-swing-2026-11-22). **Le raccordement ne clôture pas entièrement l’étape MFA.**
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
 
 <a id="activation-sms-swing-2026-11-21"></a>
 

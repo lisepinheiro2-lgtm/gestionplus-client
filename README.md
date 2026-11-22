@@ -1,5 +1,22 @@
 # Gestion+
 
+<a id="mfa-swing-2026-11-22"></a>
+
+## Enrôlement MFA raccordé dans Swing — 22 novembre 2026
+
+Le raccordement est présent dans le commit local vérifié **`ff68060`**. Après activation, une éventuelle `enrollmentProof` ouvre automatiquement le dialogue MFA : clé masquée affichable pour saisie manuelle, confirmation par TOTP, puis dix codes de récupération affichés une seule fois. Aucun enregistrement ni copie automatique ; confirmation de conservation avant le retour normal à la connexion.
+
+Cookies et CSRF sont conservés/renouvelés dans le parcours restreint ; la responsabilité de la connexion passe du contrôleur d’activation au contrôleur MFA. Réseau hors EDT, gestion des refus/limites, erreurs réseau, expiration, annulation et réponses tardives. **Aucune connexion automatique ni accès métier**, et un nouveau TOTP est nécessaire après confirmation.
+
+Codex : **443/443 tests client sur classpath et 443/443 en mode modulaire**, quatre scénarios intégrés avec le vrai Spring Boot et PostgreSQL/Redis jetables, deux écrans vérifiés en clair/sombre. Les douze empreintes correspondent à la copie testée sur le socle `ef002e2` ; le serveur de recette est `4a71440`. Les **1 191/1 191 serveur restent antérieurs** : sa suite complète n’a pas été relancée. Aucun test ni lancement pendant cette actualisation.
+
+**Étape MFA encore ouverte :** aucune reprise autonome après perte/expiration du contexte avec nouvelle preuve vérifiée ; l’interface oriente vers l’administrateur sans nouveau mécanisme administratif livré. Une réponse de confirmation perdue est incertaine, sans répétition automatique du TOTP, et les codes ne peuvent pas être récupérés à nouveau. SMS simulés/HIBP remplacé pour la recette, aucun appel Free/OVHcloud ni SMS réel ; réception réelle et déploiement non validés.
+
+Voir [architecture](docs/ARCHITECTURE.md#mfa-swing-2026-11-22), [validations attribuées](docs/VALIDATION.md#mfa-swing-2026-11-22) et [limites à traiter ou accepter explicitement](docs/ROADMAP.md#mfa-swing-2026-11-22).
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
+
 <a id="mfa-restreint-2026-11-22"></a>
 
 ## Raccordement MFA restant côté Swing — 22 novembre 2026

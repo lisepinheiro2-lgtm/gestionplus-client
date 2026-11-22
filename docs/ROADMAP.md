@@ -1,5 +1,5 @@
 ---
-summary: "Enrôlement MFA : formulaire Swing restant à raccorder, sans nouveau résultat client."
+summary: "MFA Swing raccordé sur ff68060 ; reprise et réponse de confirmation perdue restent ouvertes."
 read_when:
   - "retrouver les fonctionnalités prévues Personnel Clients Planning et Archives"
   - "préparer l’intégration des comptes et permissions avec le serveur"
@@ -7,6 +7,24 @@ read_when:
 ---
 
 # Feuille de route du projet gestion
+
+<a id="mfa-swing-2026-11-22"></a>
+
+## MFA Swing raccordé, reprise encore ouverte — 22 novembre 2026
+
+**Présent dans `ff68060` :** lecture de la réponse d’activation et de sa preuve, dialogue MFA automatique si nécessaire, contexte restreint/cookies/CSRF, clé masquée affichable explicitement, confirmation TOTP, dix codes de récupération et retour à la connexion après confirmation de conservation. Aucun accès métier ni connexion automatique.
+
+Transfert de responsabilité de connexion, réseau hors EDT, nettoyage, annulation et contrôle des réponses tardives sont présents. La recette intégrée valide quatre parcours avec le vrai serveur Spring Boot et des PostgreSQL/Redis jetables. Codex : **443/443 client sur classpath et 443/443 en mode modulaire** ; les **1 191/1 191 serveur** restent la validation précédente, sans réexécution de sa suite complète.
+
+- [ ] Définir puis réaliser une reprise autonome après perte/expiration du contexte, à partir d’une **nouvelle preuve vérifiée**. L’orientation actuelle vers l’administrateur ne fournit pas de mécanisme administratif supplémentaire.
+- [ ] Traiter ou faire accepter explicitement la perte non récupérable des codes de récupération si la réponse de confirmation est perdue. Résultat incertain affiché, pas de répétition automatique du TOTP.
+- [ ] Réception réelle de SMS et déploiement ; la recette utilise SMS simulés et HIBP remplacé, aucun appel Free/OVHcloud.
+- [ ] Préserver les chantiers distincts : confirmations privilégiées, ADMIN_EMERGENCY, exploitation, audit SMS par entreprise et métier connecté.
+
+**L’étape MFA n’est pas entièrement close tant que ses limites de reprise ne sont pas traitées ou explicitement acceptées.** Les anciennes mentions « formulaire à raccorder » ci-dessous restent des constats historiques. Voir [preuves attribuées et limites](VALIDATION.md#mfa-swing-2026-11-22).
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
 
 <a id="mfa-restreint-2026-11-22"></a>
 

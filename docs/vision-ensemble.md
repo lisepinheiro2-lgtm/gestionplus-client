@@ -1,6 +1,6 @@
 ---
 title: "Gestion+ — vision d’ensemble client et serveur"
-summary: "Activation SMS/Swing réalisée ; séparation TOTP et limites de réception/exploitation conservées."
+summary: "MFA Swing raccordé ; aucune clôture complète avant traitement ou acceptation des limites de reprise."
 read_when:
   - "raisonner sur l’ensemble Gestion+ avant une évolution d’un composant"
   - "retrouver les besoins Archives Personnel Clients Planning comptes et sécurité"
@@ -9,6 +9,23 @@ read_when:
 ---
 
 # Gestion+ — vision d’ensemble
+
+<a id="mfa-swing-2026-11-22"></a>
+
+## Raccordement MFA et limites de reprise — 22 novembre 2026
+
+Le client **`ff68060`** raccorde désormais le contexte d’enrôlement MFA restreint du serveur **`4a71440`**. La preuve éventuelle renvoyée par l’activation déclenche le dialogue MFA ; cookies et CSRF suivent le parcours, sans nouvelle session métier. Clé masquée affichable, confirmation TOTP et présentation unique des dix codes de récupération précèdent le retour à la connexion normale avec **un nouveau TOTP**, sans connexion automatique.
+
+La responsabilité du transport passe du contrôleur d’activation au contrôleur MFA. Réseau hors EDT, mises à jour sur EDT, annulation/nettoyage et traitement des réponses tardives sont présents ; les deux écrans sont adaptés au clair/sombre. Aucun enregistrement ou copie automatique des codes.
+
+Codex a validé **443/443 client dans chaque mode** et **quatre scénarios intégrés avec Spring Boot et PostgreSQL/Redis jetables**. SMS simulés et HIBP remplacé : aucune réception réelle ni déploiement validé. La suite serveur complète n’a pas été relancée ; ses 1 191/1 191 appartiennent au jalon précédent. Voir [preuves et références](VALIDATION.md#mfa-swing-2026-11-22).
+
+Après perte/expiration du contexte, **aucune reprise autonome avec une nouvelle preuve vérifiée n’est encore proposée**. L’orientation vers l’administrateur ne fournit pas de nouveau mécanisme administratif. Une réponse de confirmation perdue peut laisser le facteur confirmé sans que les codes aient été reçus ; ils ne peuvent pas être récupérés à nouveau par le client. Résultat incertain, sans répétition automatique du TOTP.
+
+**Ne pas annoncer l’étape MFA entièrement close** tant que ces limites de reprise ne sont pas traitées ou explicitement acceptées. Les règles de rôles/MFA, le contexte restreint sans métier et les autres décisions documentées sont conservés.
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
 
 <a id="mfa-restreint-2026-11-22"></a>
 

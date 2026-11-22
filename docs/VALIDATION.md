@@ -1,10 +1,53 @@
 ---
-summary: "Codex : serveur 1143/1143, client 413/413 dans les deux modes ; activation isolée et limites fournisseur."
+summary: "Codex : 443/443 client par mode, quatre scénarios Spring Boot isolés ; 1191 serveur restent antérieurs."
 read_when:
   - "examiner les validations les régressions et les vérifications restant à autoriser"
 ---
 
 # Tests et état des validations
+
+<a id="mfa-swing-2026-11-22"></a>
+
+## MFA Swing : suites et recette intégrée — 22 novembre 2026
+
+Le raccordement local **`ff68060`** est vérifié, après le socle de validation `ef002e2`. Les résultats suivants sont ceux de **Codex** avant cette mise à jour, distincts des résultats rapportés par Lise et des jalons antérieurs.
+
+### Validations antérieures de Codex — 22 novembre 2026
+
+| Vérification réalisée avant cette actualisation documentaire | Résultat et portée |
+| --- | --- |
+| Suite client complète, classpath | **443/443 réussis**. |
+| Suite client complète, mode modulaire | **443/443 réussis**, même suite dans l’autre mode, sans addition pour inventer un total client. |
+| Présentation | Deux écrans, configuration et récupération, contrôlés en **clair et sombre**. |
+| Empreintes | **Douze fichiers client conformes** à la copie testée, à nouveau comparés au code actuel pendant cette mission documentaire. |
+
+Aucun échec, abandon ou test ignoré rapporté. Les **quatre scénarios intégrés** utilisent le vrai serveur Spring Boot et PostgreSQL/Redis jetables :
+1. Activation depuis Swing, TOTP refusé puis accepté, présentation des dix codes de récupération, connexion normale avec nouveau TOTP, lecture du périmètre et logout.
+2. Expiration du contexte restreint avec une horloge de test avancée.
+3. Annulation et refus de réutilisation de la preuve déjà consommée.
+4. Activation d’un compte non soumis au MFA, sans connexion automatique.
+
+Le rapport décrit l’arbre client adapté sur le socle **`ef002e2`**, avec le serveur **`4a71440`**. Le code client est désormais dans le commit local vérifié **`ff68060`** ; les douze empreintes correspondent sans écart. Ne pas attribuer le raccordement au seul commit de base, le présenter encore comme non committé ou déduire sa publication distante. Les résultats ne sont pas transférés à d’éventuelles modifications ultérieures.
+
+Environnement de recette arrêté et conteneurs supprimés selon le rapport ; migrations V1–V30 uniquement dans les bases jetables. SMS simulés, HIBP remplacé par un dispositif isolé, aucun appel réseau HIBP ni Free/OVHcloud ou SMS réel. **Aucune suite serveur complète relancée** ; les 1 191/1 191 restent antérieurs. Aucun test, build, serveur, migration, commit ou push exécuté par cette actualisation.
+
+### Tests et dispositifs à distinguer
+
+`MfaEnrollmentConnectionTest` couvre le transport et les réponses ; `MfaEnrollmentControllerTest` couvre ouverture, refus, erreurs, fin de parcours et absence de renvoi automatique. `ActivationConnectionTest` et `ActivationControllerTest` sont adaptés à la réponse d’activation et au transfert de connexion. Les quatre scénarios intégrés décrits séparément utilisent réellement Spring Boot et PostgreSQL/Redis ; ils ne sont donc pas réduits à un serveur HTTP fictif, mais les SMS et HIBP y restent simulés.
+
+Les deux présentations, configuration et codes de récupération, ont été contrôlées en clair et sombre pendant la validation antérieure. Cette documentation ne constitue aucune nouvelle recette visuelle.
+
+### Limites ouvertes : étape MFA non entièrement close
+
+- **Contexte perdu ou expiré :** le serveur ne propose pas encore de reprise autonome avec une nouvelle preuve vérifiée. L’interface oriente vers l’administrateur ; **aucun mécanisme administratif de reprise supplémentaire n’a été développé dans ce lot**. Cette orientation ne constitue donc pas une procédure de reprise déjà disponible.
+- **Réponse de confirmation perdue :** le facteur peut avoir été confirmé, mais les dix codes de récupération ne peuvent pas être relus par le client. Le résultat est présenté comme incertain, **sans répétition automatique du TOTP**. L’interface propose une connexion normale avec nouveau TOTP et une assistance sécurisée si nécessaire, sans garantir la récupération des codes perdus.
+- **Validation isolée :** SMS simulés et HIBP remplacé pour la recette, aucun appel Free/OVHcloud, aucun SMS réel. La recette Swing → Spring Boot utilise de vrais PostgreSQL/Redis jetables ; elle ne valide ni la réception réelle de SMS ni un déploiement.
+- **Attribution des résultats :** les **1 191/1 191 serveur** appartiennent à la validation précédente ; la suite serveur complète n’a pas été relancée pour ce raccordement Swing. Les résultats client antérieurs restent datés et les validations de Codex restent distinctes des résultats rapportés par Lise.
+
+**Le raccordement est réalisé ; l’étape MFA n’est pas annoncée entièrement close tant que ces limites de reprise ne sont pas traitées ou explicitement acceptées.**
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
 
 <a id="activation-sms-swing-2026-11-21"></a>
 

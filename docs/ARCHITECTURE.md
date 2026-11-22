@@ -1,11 +1,44 @@
 ---
-summary: "Client ec08c42 : activation invitée, lien masqué, transport fixé au serveur et coordination hors EDT."
+summary: "Client ff68060 : MFA Swing raccordé, connexion transférée, codes uniques et limites de reprise."
 read_when:
   - "retrouver les responsabilités des classes et les formats CSV du client"
   - "préparer une évolution vers le serveur sans confondre historique et cible"
 ---
 
 # Architecture du projet gestion
+
+<a id="mfa-swing-2026-11-22"></a>
+
+## Architecture de l’enrôlement MFA Swing raccordé — 22 novembre 2026
+
+**Client relu `ff68060`, serveur `4a71440` ; arbres propres au début de la mission.** Les douze empreintes de la preuve correspondent au code présent. Le formulaire n’est plus seulement à développer : le raccordement et la recette isolée sont réalisés, avec les limites de reprise décrites ci-dessous.
+
+| Responsabilité | Classes et comportement vérifié |
+| --- | --- |
+| Réponse d’activation | `ServerConnection.completeActivation` lit `ActivationResult` et son éventuelle `enrollmentProof`. Sans preuve, activation terminée et retour à la connexion sans connexion automatique. Avec preuve, `ActivationController` ouvre automatiquement le dialogue MFA. |
+| Propriété du transport | `ActivationController` transfère la responsabilité de sa `ServerConnection` à `MfaEnrollmentController`. Le contrôleur d’activation ne ferme pas la connexion transférée ; le contrôleur MFA en assure la fin, sans perte des cookies entre les étapes. |
+| Ouverture et CSRF | `openMfaEnrollment` ouvre le contexte restreint avec la preuve une seule fois. Chaque POST via `postJson` relit le CSRF courant ; les cookies conservés suivent la rotation de session. `beginMfaEnrollment` charge la configuration, sans renvoyer la preuve à chaque nouvelle lecture. |
+| Réponses et échéance | `MfaEnrollment` porte enrollmentID, setupKey et expiresAt ; `MfaEnrollmentObservation` borne le temps restant à dix minutes, à partir de l’échéance serveur et du temps de transport. Le compte à rebours Swing utilise une horloge monotone et ne repousse pas une échéance déjà observée ; le serveur reste l’autorité. |
+| Présentation | `MfaEnrollmentWindow` présente une clé masquée par défaut, affichable explicitement pour saisie manuelle dans l’authentificateur, puis un TOTP à six chiffres. `MfaRecoveryCodes` valide dix codes distincts ; présentation unique, sans sauvegarde ni copie automatique. Confirmation de conservation avant le retour normal. |
+| Coordination | `MfaEnrollmentController` utilise `SwingWorker` : réseau hors EDT, mises à jour Swing sur EDT, une demande en cours ; annulation/nettoyage et garde contre les retours après fermeture. Une confirmation déjà en cours à l’échéance est attendue sans nouvel envoi. |
+| Refus et attente | Gestion des 400/403, 401/expiration, 429/`Retry-After`, indisponibilités et erreurs réseau. « Réessayer » recherche le contexte déjà ouvert par begin ; il ne réémet pas une preuve consommée et n’installe pas une reprise autonome. |
+| Fin et incertitude | Après succès, présentation des codes et fermeture du transport ; retour à la connexion avec un **nouveau TOTP**, celui de confirmation étant déjà consommé. Aucune connexion automatique ni accès métier. Une confirmation sans réponse fiable est terminale et incertaine, sans répétition automatique du TOTP. |
+
+Les réponses sensibles ont des représentations `toString` protégées ; champs de clé/code/récupération et références de parcours sont nettoyés à la fermeture. Cela n’implique aucune sauvegarde externe automatique. Les thèmes et ressources existants sont réutilisés.
+
+### Limites ouvertes : étape MFA non entièrement close
+
+- **Contexte perdu ou expiré :** le serveur ne propose pas encore de reprise autonome avec une nouvelle preuve vérifiée. L’interface oriente vers l’administrateur ; **aucun mécanisme administratif de reprise supplémentaire n’a été développé dans ce lot**. Cette orientation ne constitue donc pas une procédure de reprise déjà disponible.
+- **Réponse de confirmation perdue :** le facteur peut avoir été confirmé, mais les dix codes de récupération ne peuvent pas être relus par le client. Le résultat est présenté comme incertain, **sans répétition automatique du TOTP**. L’interface propose une connexion normale avec nouveau TOTP et une assistance sécurisée si nécessaire, sans garantir la récupération des codes perdus.
+- **Validation isolée :** SMS simulés et HIBP remplacé pour la recette, aucun appel Free/OVHcloud, aucun SMS réel. La recette Swing → Spring Boot utilise de vrais PostgreSQL/Redis jetables ; elle ne valide ni la réception réelle de SMS ni un déploiement.
+- **Attribution des résultats :** les **1 191/1 191 serveur** appartiennent à la validation précédente ; la suite serveur complète n’a pas été relancée pour ce raccordement Swing. Les résultats client antérieurs restent datés et les validations de Codex restent distinctes des résultats rapportés par Lise.
+
+**Le raccordement est réalisé ; l’étape MFA n’est pas annoncée entièrement close tant que ces limites de reprise ne sont pas traitées ou explicitement acceptées.**
+
+Voir [interface](INTERFACE-RAVEN.md#mfa-swing-2026-11-22), [preuves attribuées](VALIDATION.md#mfa-swing-2026-11-22) et [suite](ROADMAP.md#mfa-swing-2026-11-22).
+
+**Jalon antérieur au raccordement MFA Swing du 22 novembre : les dates, résultats et anciennes limites ci-dessous restent historiques ; lire la reprise ci-dessus pour l’état courant.**
+
 
 <a id="activation-sms-swing-2026-11-21"></a>
 
