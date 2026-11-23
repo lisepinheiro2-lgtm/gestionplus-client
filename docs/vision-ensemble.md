@@ -1,6 +1,6 @@
 ---
 title: "Gestion+ — vision d’ensemble client et serveur"
-summary: "MFA Swing raccordé ; aucune clôture complète avant traitement ou acceptation des limites de reprise."
+summary: "23 novembre : preuves et offres persistées côté serveur ; cycle de succession HTTP/Swing et limites MFA encore ouverts."
 read_when:
   - "raisonner sur l’ensemble Gestion+ avant une évolution d’un composant"
   - "retrouver les besoins Archives Personnel Clients Planning comptes et sécurité"
@@ -9,6 +9,28 @@ read_when:
 ---
 
 # Gestion+ — vision d’ensemble
+
+<a id="notifications-confirmations-succession-2026-11-23"></a>
+
+## Décisions serveur du 23 novembre 2026 — conséquences pour le client
+
+Le serveur publié **`aa9eff7`** ajoute les notifications de comptes/MFA (V31), les preuves renforcées persistées (V32) et le stockage des offres de succession (V33). Ces développements serveur **ne constituent pas un nouveau parcours client livré ou validé**. Le client local reste sur `9c9e1b9` (documentation ; code MFA `ff68060`), arbre propre avant cette mission.
+
+Les notifications sont enregistrées dans la transaction métier et livrées ultérieurement à leur destinataire : désactivation après dernier accès, deux participants de chaque transfert ADMIN, y compris pendant une succession, et activation du facteur MFA sans secret/code. **Trois tentatives SMTP puis abandon audité** restent la règle : ne pas promettre une réception, une reprise manuelle ou l’absence de doublons.
+
+La confirmation renforcée est une preuve de **cinq minutes maximum**, liée au compte, à sa version de sécurité, à l’action et au récapitulatif, pas à une session HTTP individuelle. Empreinte seule en PostgreSQL, une preuve courante par compte/action, OFFER et ACCEPTANCE indépendantes, consommation atomique dans la transaction métier et conservation en cas de rollback. Le vérificateur est maintenant un bean Spring (`468edda`) ; limitation dédiée des tentatives et audit spécifique restent à réaliser.
+
+L’offre de succession est distincte : **24 heures** à la création par le service, droits et sessions conservés. Son stockage V33 sérialise les créations par verrou PostgreSQL partagé d’organisation ; une seule PENDING ou ACCEPTED non expirée. L’ancien **`acceptSuccession()` ne consulte pas l’offre et ne la marque pas COMPLETED**. Les parcours métier d’annulation/finalisation n’ont pas été réécrits par le dernier lot : cycle complet et raccordement HTTP/Swing restent ouverts. Conserver structures triées → comptes triés → organisation → offre lors du raccordement, pour éviter l’interblocage ; la recherche des anciennes offres ne les verrouille pas à la création.
+
+Codex a validé côté serveur, en copies isolées, **1 215/1 215**, puis **1 255/1 255**, puis **58/58 ciblés et 1 284/1 284 complets**. La dernière suite comprend 14 scénarios existants de sessions à deux JVM et un nouveau scénario de concurrence du stockage entre deux JVM ; aucun nouveau résultat client, e-mail/SMS réel, parcours HTTP/Swing complet de succession ou déploiement validé. Les **443/443 client par mode** restent ceux du 22 novembre.
+
+**MFA toujours non entièrement clos :** perte/expiration du contexte sans reprise autonome par nouvelle preuve vérifiée ; orientation vers l’administrateur sans mécanisme administratif supplémentaire. Codes de récupération non récupérables après perte de leur réponse. Ces limites restent à traiter ou à accepter explicitement.
+
+
+Voir [les contrats serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/DEVELOPPEMENT.md#notifications-confirmations-succession-2026-11-23).
+
+**Historique conservé : les jalons antérieurs ci-dessous restent datés ; cette reprise décrit les évolutions du 23 novembre 2026.**
+
 
 <a id="mfa-swing-2026-11-22"></a>
 
