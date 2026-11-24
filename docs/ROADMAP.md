@@ -1,5 +1,5 @@
 ---
-summary: "23 novembre : preuves et offres persistées côté serveur ; cycle de succession HTTP/Swing et limites MFA encore ouverts."
+summary: "24 novembre : cycle serveur lié aux sessions dans 908c24d ; HTTP de production et Swing ouverts, validations client antérieures."
 read_when:
   - "retrouver les fonctionnalités prévues Personnel Clients Planning et Archives"
   - "préparer l’intégration des comptes et permissions avec le serveur"
@@ -7,6 +7,33 @@ read_when:
 ---
 
 # Feuille de route du projet gestion
+
+<a id="succession-cycle-2026-11-24"></a>
+
+## Succession côté serveur et raccordement client restant — 24 novembre 2026
+
+Le serveur publié **`908c24d`**, après `77ec48e`, possède désormais le cycle métier jusqu’à COMPLETED. Cela dépasse le jalon du 23 novembre où l’ancien `acceptSuccession()` ignorait l’offre ; ce jalon reste historique. **Aucun nouveau parcours Swing ni résultat client** n’est livré par cette évolution serveur. Le client local est sur `48d8f94` (documentation ; code MFA `ff68060`), arbre propre avant cette mission.
+
+Le futur parcours devra présenter séparément :
+
+1. Le récapitulatif, puis mot de passe/TOTP du sortant et **preuve de création unique de cinq minutes**, liée à compte/version/action, empreinte de sa session HTTP et récapitulatif. La preuve est consommée dans la transaction qui crée l’offre.
+2. Une **offre de 24 heures**, annulable par le sortant tant qu’elle est PENDING ou ACCEPTED et non expirée. Création et acceptation ne transfèrent aucun droit.
+3. L’acceptation par le successeur, puis **deux confirmations indépendantes de cinq minutes**, chacune issue du mot de passe/TOTP de son participant, liée à l’offre, au compte/version, à l’empreinte de sa session et au récapitulatif. Renouveler l’une ne renouvelle pas l’autre ou l’offre.
+4. La finalisation par **le successeur depuis la session qui a confirmé**, avec contrôle conjoint des deux sessions. Une autre session du même compte ne convient pas.
+
+Le contrôle Redis conjoint fixe **`authorizedAt`** : déconnexion avant, refus ; après, une opération déjà autorisée peut se terminer. Transfert PostgreSQL, COMPLETED et suppression des confirmations sont atomiques ; les deux comptes voient leurs sessions invalidées, avec révocation Redis après commit. **Une panne Redis après commit peut laisser le transfert effectué et une réponse en erreur sans révocation immédiate garantie** : ne pas promettre un rollback ou un résultat réseau certain. Le digest du récapitulatif dépend encore du `toString()` Java, pas d’un format canonique versionné.
+
+V34 invalide les anciennes preuves et ajoute leur liaison à la session ; V35 stocke les confirmations par offre/participant ; V1 à V33 inchangées. **Basculement V34 à coordonner avec les anciennes instances.** Les tables métier conservent des empreintes de session, sans modifier le stockage interne Spring Session ni les clés d’activité Redis existantes. Verrous structures triées → comptes triés → organisation → offre ; relecture SQL de l’organisation sous verrou, ordre à préserver.
+
+Codex : **1 302/1 302 serveur**, 19 empreintes conformes, copie isolée avec PostgreSQL/Redis jetables. Concurrence de finalisation sur deux JVM, expiration/session différente, annulation, panne Redis et rollback couverts. Le point d’entrée utilisé sur deux JVM est dans **le dispositif d’essai**, pas dans l’API HTTP de production. Aucun e-mail/SMS réel, réception réelle ou déploiement validé ; aucun test relancé pendant l’actualisation documentaire. Les **443/443 client par mode** restent ceux du 22 novembre.
+
+**À réaliser :** raccordements HTTP de production et Swing ; audit spécifique des nouvelles opérations et refus ; limitation distribuée dédiée ; notifications du cycle distinctes des avis de transferts ADMIN déjà présents ; reprise de révocation après commit et stabilisation du digest. **Limites MFA conservées :** aucune reprise autonome par nouvelle preuve après contexte perdu/expiré, aucun mécanisme administratif supplémentaire, codes non récupérables après réponse perdue ; étape non entièrement close avant traitement ou acceptation explicite.
+
+
+Voir [le guide serveur](https://github.com/lisepinheiro2-lgtm/gestionplus-server/blob/main/docs/DEVELOPPEMENT.md#succession-cycle-2026-11-24).
+
+**Historique conservé : la reprise du 24 novembre 2026 ci-dessus actualise le cycle ; les jalons du 23 novembre et antérieurs restent datés.**
+
 
 <a id="notifications-confirmations-succession-2026-11-23"></a>
 
